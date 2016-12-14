@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{AF5F204D-2406-4B1C-A190-3CA004FFC4D4}</ProjectGuid>
-    <RootNamespace>red_v2</RootNamespace>
+    <ProjectGuid>{4FDB8BF3-496C-409A-9FE4-AEEF2386128E}</ProjectGuid>
+    <RootNamespace>red_v2_utility</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -31,7 +31,7 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v140</PlatformToolset>
@@ -44,7 +44,7 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
@@ -72,10 +72,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>red2</TargetName>
+    <TargetName>redutil2</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>red2</TargetName>
+    <TargetName>redutil2</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -98,7 +98,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)base_type;$(SolutionDir)src\red_v2_utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)base_type;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -111,6 +111,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -140,7 +141,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)base_type;$(SolutionDir)src\red_v2_utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)base_type;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -155,55 +156,23 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>compute_30,sm_30</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="integrator.cu" />
-    <CudaCompile Include="int_euler.cu" />
-    <CudaCompile Include="int_hermite4.cu" />
-    <CudaCompile Include="int_rungekutta2.cu" />
-    <CudaCompile Include="int_rungekutta4.cu" />
-    <CudaCompile Include="int_rungekutta5.cu" />
-    <CudaCompile Include="int_rungekutta7.cu" />
-    <CudaCompile Include="main.cu" />
-    <CudaCompile Include="nbody.cu" />
-    <CudaCompile Include="ode.cu" />
-    <CudaCompile Include="rtbp1D.cu" />
-    <CudaCompile Include="rtbp2D.cu" />
-    <CudaCompile Include="rtbp3D.cu" />
-    <CudaCompile Include="tbp1D.cu" />
-    <CudaCompile Include="tbp2D.cu" />
-    <CudaCompile Include="tbp3D.cu" />
-    <CudaCompile Include="threebody.cu" />
+    <CudaCompile Include="util.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="integrator.h" />
-    <ClInclude Include="int_euler.h" />
-    <ClInclude Include="int_hermite4.h" />
-    <ClInclude Include="int_rungekutta2.h" />
-    <ClInclude Include="int_rungekutta4.h" />
-    <ClInclude Include="int_rungekutta5.h" />
-    <ClInclude Include="int_rungekutta7.h" />
-    <ClInclude Include="nbody.h" />
-    <ClInclude Include="ode.h" />
-    <ClInclude Include="options.h" />
-    <ClInclude Include="parameter.h" />
-    <ClInclude Include="rtbp1D.h" />
-    <ClInclude Include="rtbp2D.h" />
-    <ClInclude Include="rtbp3D.h" />
-    <ClInclude Include="tbp1D.h" />
-    <ClInclude Include="tbp2D.h" />
-    <ClInclude Include="tbp3D.h" />
-    <ClInclude Include="threebody.h" />
+    <ClCompile Include="file_util.cpp" />
+    <ClCompile Include="tokenizer.cpp" />
+    <ClCompile Include="tools.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="options.cpp" />
-    <ClCompile Include="parameter.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\red_v2_utility\red_v2_utility.vcxproj">
-      <Project>{4fdb8bf3-496c-409a-9fe4-aeef2386128e}</Project>
-    </ProjectReference>
+    <ClInclude Include="file_util.h" />
+    <ClInclude Include="redutil2.h" />
+    <ClInclude Include="tokenizer.h" />
+    <ClInclude Include="tools.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
