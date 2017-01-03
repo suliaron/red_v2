@@ -30,6 +30,7 @@ namespace redutil2
 
 		std::string get_time_stamp(bool use_comma);
 		std::string convert_time_t(time_t t);
+        std::string convert_var_t(var_t v);
 
 		void populate_data(uint32_t* n_bodies, pp_disk_t::sim_data_t *sim_data);
 

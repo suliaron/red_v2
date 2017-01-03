@@ -333,7 +333,7 @@ void device_query(ostream& sout, int id_dev)
 
 void set_kernel_launch_param(uint32_t n_data, uint16_t n_tpb, dim3& grid, dim3& block)
 {
-	uint32_t n_thread = min(n_tpb, n_data);
+	uint32_t n_thread = min((uint32_t)n_tpb, n_data);
 	uint32_t n_block = (n_data + n_thread - 1)/n_thread;
 
 	grid.x	= n_block;

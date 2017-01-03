@@ -132,6 +132,14 @@ string convert_time_t(time_t t)
 	return convert.str();
 }
 
+string convert_var_t(var_t v)
+{
+    ostringstream convert;	// stream used for the conversion
+    convert << v;			// insert the textual representation of 't' in the characters in the stream
+    return convert.str();
+}
+
+
 // Draw a number from a given distribution
 var_t generate_random(var_t xmin, var_t xmax, var_t p(var_t))
 {
