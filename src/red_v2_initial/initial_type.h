@@ -28,10 +28,28 @@ typedef struct oe_dist
 {
     var2_t				range[ORBELEM_NAME_N];
     distribution_base*  item[ORBELEM_NAME_N];
+
+    oe_dist()
+    {
+        for (uint16_t i = 0; i < ORBELEM_NAME_N; i++)
+        {
+            range[i].x = range[i].y = 0.0;
+            item[i] = NULL;
+        }
+    }
 } oe_dist_t;
 
 typedef struct pp_dist
 {
     var2_t				range[PP_NAME_N];
     distribution_base*  item[PP_NAME_N];
+
+    pp_dist()
+    {
+        for (uint16_t i = 0; i < PP_NAME_N; i++)
+        {
+            range[i].x = range[i].y = 0.0;
+            item[i] = NULL;
+        }
+    }
 } pp_dist_t;

@@ -14,21 +14,55 @@ namespace redutil2
 
 		bool is_number(const std::string& str);
 
-		/// Removes all leading white-space characters from the current string object.
-		/// The default white spaces are: " \t\n\r\f\v"
-		std::string& ltrim(std::string& s);
-		std::string& ltrim(std::string& s, const char* t);
+        //! Removes all leading white-space characters from the current string object. The default white spaces are: " \t\n\r\f\v"
+        /*
+            \param s the string to process
+        */
+        std::string& ltrim(std::string& s);
+        //! Removes all leading white-space characters from the current string object.
+        /*
+            \param s the string to process
+            \param t holds the white spaces
+        */
+        std::string& ltrim(std::string& s, const char* t);
 
-		std::string& rtrim(std::string& s);
-		std::string& rtrim(std::string& s, const char* t);
+        //! Removes all trailing white-space characters from the current string object. The default white spaces are: " \t\n\r\f\v"
+        /*
+            \param s the string to process
+        */
+        std::string& rtrim(std::string& s);
+        //! Removes all trailing white-space characters from the current string object.
+        /*
+            \param s the string to process
+            \param t holds the white spaces
+        */
+        std::string& rtrim(std::string& s, const char* t);
 
-		std::string& trim(std::string& s);
-		std::string& trim(std::string& s, const char* t);
+        //! Removes all leading and trailing white-space characters from the current string object. The default white spaces are: " \t\n\r\f\v"
+        /*
+            \param s the string to process
+        */
+        std::string& trim(std::string& s);
+        //! Removes all leading and trailing white-space characters from the current string object.
+        /*
+            \param s the string to process
+            \param t holds the white spaces
+        */
+        std::string& trim(std::string& s, const char* t);
 
-		std::string& trim_comment(std::string& s);
-		std::string& trim_comment(std::string& s, const char* t);
+        //! Removes all trailing characters after the first comment character from the current string object. The default comment character is "#"
+        /*
+            \param s the string to process
+        */
+        std::string& trim_comment(std::string& s);
+        //! Removes all trailing characters after the first comment character from the current string object. 
+        /*
+            \param s the string to process
+            \param c holds the comment character
+        */
+        std::string& trim_comment(std::string& s, const char* c);
 
-		std::string get_time_stamp(bool use_comma);
+		std::string get_time_stamp();
 		std::string convert_time_t(time_t t);
         std::string convert_var_t(var_t v);
 
@@ -180,6 +214,7 @@ namespace redutil2
 			var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v);
 			var3_t calc_position_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* r);
 			var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v);
+            void transform_to_bc(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v);
 		} /* namespace nbp */
 
 	} /* namespace tools */

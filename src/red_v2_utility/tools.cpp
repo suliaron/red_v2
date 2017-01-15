@@ -35,53 +35,40 @@ bool is_number(const string& str)
    return true;
 }
 
-/// Removes all leading white-space characters from the current string object.
-/// The default white spaces are: " \t\n\r\f\v"
 string& ltrim(string& s)
 {
 	s.erase(0, s.find_first_not_of(ws));
     return s;
 }
 
-/// Removes all leading white-space characters from the current string object.
-/// The white spaces are defined in the parameter t.
 string& ltrim(string& s, const char* t)
 {
 	s.erase(0, s.find_first_not_of(t));
     return s;
 }
 
-/// Removes all trailing white-space characters from the current string object.
-/// The default white spaces are: " \t\n\r\f\v"
 string& rtrim(string& s)
 {
     s.erase(s.find_last_not_of(ws) + 1);
     return s;
 }
 
-/// Removes all trailing white-space characters from the current string object.
-/// The default white spaces are: " \t\n\r\f\v"
 string& rtrim(string& s, const char* t)
 {	
     s.erase(s.find_last_not_of(t) + 1);
     return s;
 }
 
-/// Removes all leading and trailing white-space characters from the current string object.
-/// The default white-space characters are: " \t\n\r\f\v"
 string& trim(string& s)
 {
     return ltrim(rtrim(s));
 }
 
-/// Removes all leading and trailing white-space characters from the current string object.
 string& trim(string& s, const char* t)
 {
     return ltrim(rtrim(s, t));
 }
 
-/// Removes all trailing characters after the first comment character from the current string object.
-/// The default comment character is "#"
 string& trim_comment(string& s)
 {
 	size_t p = s.find_first_of(comment);
@@ -94,8 +81,6 @@ string& trim_comment(string& s)
     return s;
 }
 
-/// Removes all trailing characters after the first comment character from the current string object.
-/// The default comment character is "#"
 string& trim_comment(string& s, const char* c)
 {
 	size_t p = s.find_first_of(c);
@@ -108,19 +93,12 @@ string& trim_comment(string& s, const char* c)
     return s;
 }
 
-string get_time_stamp(bool use_comma)
+string get_time_stamp()
 {
 	static char time_stamp[20];
 
 	time_t now = time(NULL);
-	if (use_comma)
-	{
-		strftime(time_stamp, 20, "%Y-%m-%d,%H:%M:%S", localtime(&now));
-	}
-	else
-	{
-		strftime(time_stamp, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
-	}
+    strftime(time_stamp, 20, "%Y-%m-%d %H:%M:%S", localtime(&now));
 
 	return string(time_stamp);
 }
@@ -476,7 +454,7 @@ var_t calc_mass(var_t R, var_t density)
 	return four_pi_over_three * CUBE(R) * density;
 }
 
-void calc_position_after_collision(var_t m1, var_t m2, const var4_t* r1, const var4_t* r2, var4_t& r)
+void calc_position_after_collision(var_t m1, var_t m2, const var3_t* r1, const var3_t* r2, var3_t& r)
 {
 	const var_t M = m1 + m2;
 
@@ -485,7 +463,7 @@ void calc_position_after_collision(var_t m1, var_t m2, const var4_t* r1, const v
 	r.z = (m1 * r1->z + m2 * r2->z) / M;
 }
 
-void calc_velocity_after_collision(var_t m1, var_t m2, const var4_t* v1, const var4_t* v2, var4_t& v)
+void calc_velocity_after_collision(var_t m1, var_t m2, const var3_t* v1, const var3_t* v2, var3_t& v)
 {
 	const var_t M = m1 + m2;
 
@@ -515,7 +493,7 @@ var_t norm(const var3_t* r)
 	return sqrt(SQR(r->x) + SQR(r->y) + SQR(r->z));
 }
 
-var_t calc_dot_product(const var4_t& u, const var4_t& v)
+var_t calc_dot_product(const var3_t& u, const var3_t& v)
 {
     return (u.x * v.x + u.y * v.y + u.z * v.z);
 }
@@ -1065,9 +1043,7 @@ void calc_oe(var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe)
 
 var_t calc_orbital_period(var_t mu, var_t a)
 {
-	static var_t two_pi = 6.283185307179586;
-
-	return (two_pi*sqrt(CUBE(a)/mu));
+	return (TWOPI*sqrt(CUBE(a)/mu));
 }
 
 // Date of creation: 2016.11.02.
@@ -1422,6 +1398,21 @@ var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v)
 
 	return V0;
 }
+
+void transform_to_bc(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
+{
+    var_t M0 = get_total_mass(n, p);
+    var3_t R0 = calc_position_of_bc(n, p, r);
+    var3_t V0 = calc_velocity_of_bc(n, p, v);
+
+    // Transform the bodies coordinates and velocities
+    for (int j = n - 1; j >= 0; j--)
+    {
+        r[j].x -= R0.x;		r[j].y -= R0.y;		r[j].z -= R0.z;
+        v[j].x -= V0.x;		v[j].y -= V0.y;		v[j].z -= V0.z;
+    }
+}
+
 } /* namespace nbp */
 
 

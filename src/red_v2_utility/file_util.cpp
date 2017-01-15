@@ -142,7 +142,7 @@ uint32_t load_ascii_file(const string& path, string& result)
 	}
 	else
 	{
-		throw string("The file '" + path + "' could not opened!\r\n");
+		throw string("Cannot open " + path + ".");
 	}
 
 	return n_line;
@@ -159,21 +159,21 @@ void load_binary_file(const string& path, size_t n_data, var_t* data)
 		size_t size = n_data * sizeof(var_t);
 		if (size != N)
 		{
-			throw string("The file '" + path + "' has different number of data than expected!\r\n");
+			throw string("The file " + path + " has different number of data than expected.");
 		}
 		file.read(reinterpret_cast<char*>(data), size);
 		file.close();
 	}
 	else
 	{
-		throw string("The file '" + path + "' could not opened!\r\n");
+		throw string("Cannot open " + path + ".");
 	}
 	file.close();
 }
 
 void log_start(ostream& sout, int argc, const char** argv, const char** env, string params)
 {
-	sout << tools::get_time_stamp(false) << " starting " << argv[0] << endl;
+	sout << tools::get_time_stamp() << " starting " << argv[0] << endl;
 	sout << "Command line arguments: " << endl;
 	for (int i = 1; i < argc; i++)
 	{
@@ -230,7 +230,7 @@ void log_start(ostream& sout, int argc, const char** argv, const char** env, str
 
 void log_message(ostream& sout, string msg, bool print_to_screen)
 {
-	sout << tools::get_time_stamp(false) << SEP << msg << endl;
+	sout << tools::get_time_stamp() << SEP << msg << endl;
 	//if (print_to_screen && sout != cout)
 	//{
 	//	cout << tools::get_time_stamp(false) << SEP << msg << endl;
@@ -713,7 +713,7 @@ void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, ui
 
 namespace nbp
 {
-void print_solution_info(ofstream& sout, var_t t, var_t dt, uint32_t n_obj, data_rep_t repres)
+void print_solution_info(ofstream& sout, var_t t, var_t dt, var_t dt_wc, uint32_t n_obj, data_rep_t repres)
 {
 	switch (repres)
 	{
@@ -722,16 +722,18 @@ void print_solution_info(ofstream& sout, var_t t, var_t dt, uint32_t n_obj, data
 		sout.setf(ios::right);
 		sout.setf(ios::scientific);
 
-		sout << setw(VAR_T_W) << t  << SEP            /* time of the record [day] (double) */
-			 << setw(VAR_T_W) << dt << SEP            /* next timestep [day]      (double) */
-			 << setw(INT_T_W) << n_obj  << endl;      /* number of bodies         (uint32) */
+		sout << setw(VAR_T_W) << t << SEP            /* time of the record [day] (double) */
+            << setw(VAR_T_W) << dt << SEP            /* next timestep [day]      (double) */
+            << setw(VAR_T_W) << dt_wc << SEP         /* the ellapsed time since the begining of the integration [sec]      (double) */
+            << setw(INT_T_W) << n_obj << endl;       /* number of bodies         (uint32) */
 		sout.flush();
 		break;
 
 	case DATA_REPRESENTATION_BINARY:
 		sout.write((char*)&t,     sizeof(var_t));     /* time of the record [day] (double) */
-		sout.write((char*)&dt,    sizeof(var_t));     /* next timestep [day]      (double) */
-		sout.write((char*)&n_obj, sizeof(uint32_t));  /* number of bodies         (uint32) */
+        sout.write((char*)&dt,    sizeof(var_t));     /* next timestep [day]      (double) */
+        sout.write((char*)&dt_wc, sizeof(var_t));     /* the ellapsed time since the begining of the integration [sec]      (double) */
+        sout.write((char*)&n_obj, sizeof(uint32_t));  /* number of bodies         (uint32) */
 		break;
 
 	default:

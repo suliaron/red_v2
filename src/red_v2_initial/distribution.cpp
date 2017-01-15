@@ -39,7 +39,7 @@ distribution_base::distribution_base(uint32_t seed, var_t x_min, var_t x_max) :
 {
     if (x_min > x_max)
     {
-        throw std::string("In distribution_base constructor the parameter 'x_min' is smaller than 'x_max'.");
+        throw std::string("In distribution_base constructor the parameter 'x_min' is larger than 'x_max'.");
     }
 }
 
@@ -120,22 +120,23 @@ normal_distribution::~normal_distribution()
 
 var_t normal_distribution::get_next()
 {
-    var_t u = (prng.get_next() / 4294967295.0);
-    return (mean + variance * sqrt(-2.0 * log(u)) * cos(1.4629180792671596E-9 * prng.get_next() ));
+    // u \in (0, 1]
+    var_t u = (prng.get_next() + 1) / 4294967296.0;
+    return (mean + variance * sqrt(-2.0 * log(u)) * cos(1.4629180792671596E-9 * prng.get_next()));
 }
 
 
-power_law_distribution::power_law_distribution(uint32_t seed, var_t x_min, var_t x_max, var_t power) :
+power_law_distribution::power_law_distribution(uint32_t seed, var_t power, var_t x_min, var_t x_max) :
     distribution_base(seed, x_min, x_max),
     power(power)
 {
     if (0.0 == x_min)
     {
-        throw std::string("In power-law distribution the parameter 'x_min' is zero.");
+        throw std::string("In power-law distribution the parameter 'x_min' cannot be zero.");
     }
     if (0.0 == x_max)
     {
-        throw std::string("In power-law distribution the parameter 'x_max' is zero.");
+        throw std::string("In power-law distribution the parameter 'x_max' cannot be zero.");
     }
 }
 
@@ -144,27 +145,27 @@ power_law_distribution::~power_law_distribution()
 
 var_t power_law_distribution::get_next()
 {
-    var_t y_min = power == 0.0 ? 0.0 : pow(x_min, power);
-    var_t y_max = power == 0.0 ? 1.0 : pow(x_max, power);
-    if (y_min > y_max)
+    const var_t a = 1.0;
+
+    var_t y = 0.0;
+    var_t pp = power + 1.0;
+    if (0.0 != pp)
     {
-        swap(y_min, y_max);
+        var_t u0 = a * pow(x_min, pp) / pp;
+        var_t u1 = a * pow(x_max, pp) / pp;
+        if (u0 > u1)
+        {
+            std::swap(u0, u1);
+        }
+        var_t u = u0 + (u1 - u0) * (prng.get_next() / 4294967295.0);
+        y = pow(pp / a * u, 1.0 / pp);
     }
-
-    var_t d_y = y_max - y_min;
-    var_t d_x = x_max - x_min;
-
-    var_t x, y;
-    var_t area_max = d_x * d_y;
-    do
+    else
     {
-        var_t ux = area_max * (prng.get_next() / 4294967295.0);
-        var_t uy = y_min + (y_max - y_min) * (prng.get_next() / 4294967295.0);
-        x = ux / d_y + x_min;
-        y = uy;
-    } while (y > pow(x, power));
-
-    return x;
+        throw string("In the power-law distribution the power = -1 case is not yet implemented.");
+    }
+ 
+    return y;
 }
 
 
@@ -173,6 +174,8 @@ lognormal_distribution::lognormal_distribution(uint32_t seed, var_t x_min, var_t
     mu(mu),
     sigma(sigma)
 {
+    throw std::string("The log-normal distribution is not correctly implemeted.");
+
     if (0.0 >= x_min)
     {
         throw std::string("In log-normal distribution the parameter 'x_min' is not positive.");

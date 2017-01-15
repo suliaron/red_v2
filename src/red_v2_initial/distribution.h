@@ -84,7 +84,7 @@ private:
 class power_law_distribution : public distribution_base
 {
 public:
-    power_law_distribution(uint32_t seed, var_t x_min, var_t x_max, var_t power);
+    power_law_distribution(uint32_t seed, var_t power, var_t x_min, var_t x_max);
     ~power_law_distribution();
 
     var_t get_next();
@@ -95,7 +95,7 @@ private:
 class lognormal_distribution : public distribution_base
 {
 public:
-    lognormal_distribution(uint32_t seed, var_t x_min, var_t x_max, var_t mu, var_t sigma);
+    lognormal_distribution(uint32_t seed, var_t mu, var_t sigma, var_t x_min, var_t x_max);
     ~lognormal_distribution();
 
     var_t get_next();

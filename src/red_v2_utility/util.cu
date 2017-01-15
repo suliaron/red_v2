@@ -255,8 +255,7 @@ void device_query(ostream& sout, int id_dev)
     // This function call returns 0 if there are no CUDA capable devices.
     if (deviceCount == 0)
     {
-        printf("There are no available device(s) that support CUDA\n");
-		throw string("cudaGetDeviceCount error.");
+		throw string("There are no available device(s) that support CUDA.");
     }
 
     int dev, driverVersion = 0, runtimeVersion = 0;
@@ -354,7 +353,7 @@ void allocate_host_vector(void **ptr, size_t size, const char *file, int line)
 	*ptr = (void *)malloc(size);
 	if (NULL == ptr)
 	{
-		throw string("malloc failed (allocate_host_vector)");
+		throw string("Out of memory.");
 	}
 
 	// Clear memory 
@@ -500,7 +499,7 @@ void set_device(int id_of_target_dev, ostream& sout)
 	int n_device = get_n_cuda_device();
 	if (0 == n_device)
 	{
-		throw string("No CUDA device was found. ");
+		throw string("There are no available device(s) that support CUDA.");
 	}
 
 	if (n_device > id_of_target_dev && 0 <= id_of_target_dev)
@@ -510,7 +509,7 @@ void set_device(int id_of_target_dev, ostream& sout)
 	}
 	else
 	{
-		throw string("The device with the requested id does not exist!");
+		throw string("The device with the requested id does not exist.");
 	}
 }
 
@@ -583,7 +582,7 @@ void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd)
         sd->oe      = sd->d_oe;
 		break;
 	default:
-		throw string("Parameter 'PROC_UNIT' is out of range.");
+		throw string("Parameter 'proc_unit' is out of range.");
 	}
 }
 

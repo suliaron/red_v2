@@ -1,4 +1,5 @@
 #include <time.h>       /* time                      */
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -60,6 +61,29 @@ namespace ephemeris_major_planets
 static string fn_info;
 static string fn_data;
 
+
+static void print_data(string& path, uint32_t n_data, var_t* data)
+{
+    printf("Writing %s to disk.\n", path.c_str());
+
+    ofstream sout(path.c_str(), ios::out);
+    if (sout)
+    {
+        sout.setf(ios::right);
+        sout.setf(ios::scientific);
+
+        for (uint32_t i = 0; i < n_data; i++)
+        {
+            sout << setprecision(16) << setw(25) << data[i] << endl;
+        }
+    }
+    else
+    {
+        throw string("Cannot open " + path + ".");
+    }
+    sout.close();
+}
+
 static void print_start_files(string& dir)
 {
     string path = file::combine_path(dir, "start_files.txt");
@@ -73,7 +97,7 @@ static void print_start_files(string& dir)
     }
     else
     {
-        throw string("Cannot open " + path + "!");
+        throw string("Cannot open " + path + ".");
     }
     sout.close();
 }
@@ -451,7 +475,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::nbp::print_solution_info(sout, t0, dt0, n_obj, DATA_REPRESENTATION_ASCII);
+                file::nbp::print_solution_info(sout, t0, dt0, 0, n_obj, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -521,30 +545,32 @@ namespace model
             uint32_t seed = (uint32_t)time(NULL);
             cout << "The seed number is " << seed << endl;
             //The pseudo-random number generator is initialized using the argument passed as seed.
+            // Used by the subsequent rand() function calls
             srand(seed);
 
             // Epoch for the disk's state
             t0 = 0.0;
-            var_t m0 = 1.0;  //! Mass of the central star
+            const var_t m0 = 1.0;  //! Mass of the central star
             oe_dist_t oe_d;
             pp_dist_t pp_d;
 
             oe_d.item[ORBELEM_NAME_SMA] = new uniform_distribution(rand(), 1.0, 2.0);
-            oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.0);
-            oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.0);
-            oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 0.0);
-            oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 0.0);
-            oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 0.0);
+            // If the distribution is NULL than the corresponding orbital element is zero
+            //oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.0);
+            //oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.0);
+            //oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 0.0);
+            //oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 0.0);
+            //oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 0.0);
 
-            pp_d.item[PP_NAME_MASS] = new uniform_distribution(rand(), 1.0*constants::EarthToSolar, 1.0*constants::EarthToSolar);
+            pp_d.item[PP_NAME_MASS] = new uniform_distribution(rand(), 1.0*constants::CeresToSolar, 1.0*constants::CeresToSolar);
 
             // Increase n_obj by one to include the central body
             n_obj++;
             uint32_t n_var = 6 * n_obj;
             uint32_t n_par = n_obj;
             ALLOCATE_HOST_VECTOR((void**)&oe, n_obj * sizeof(orbelem_t));
-            ALLOCATE_HOST_VECTOR((void**)&y, n_var * sizeof(var_t));
-            ALLOCATE_HOST_VECTOR((void**)&p, n_par * sizeof(nbp_t::param_t));
+            ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
+            ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
             ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
             {
@@ -563,7 +589,6 @@ namespace model
                 for (uint32_t i = 0; i < n_obj; i++, bodyIdx++, bodyId++)
                 {
                     body_md.id = bodyId;
-                    generate_pp(&pp_d, param);
 
                     // The central star
                     if (1 == bodyId)
@@ -577,6 +602,8 @@ namespace model
                     else
                     {
                         generate_oe(&oe_d, _oe);
+                        generate_pp(&pp_d, param);
+
                         var_t mu = K2 * (m0 + param.mass);
                         tools::calc_phase(mu, &_oe, &rVec, &vVec);
                         uint32_t offset = 3 * i;
@@ -584,7 +611,7 @@ namespace model
                         offset += 3 * n_obj;
                         y[offset + 0] = vVec.x; y[offset + 1] = vVec.y; y[offset + 2] = vVec.z;
 
-                        var_t P = tools::calc_orbital_period(mu, oe[i].sma);
+                        var_t P = tools::calc_orbital_period(mu, _oe.sma);
                         if (min_P > P)
                         {
                             min_P = P;
@@ -598,6 +625,12 @@ namespace model
                 // Set the initial stepsize for the integrator
                 dt0 = min_P / 50.0;
             }
+
+            // Transform the coordinates into barycentric
+            var3_t* r = (var3_t*)y;
+            var3_t* v = (var3_t*)(y + 3 * n_obj);
+            tools::nbp::transform_to_bc(n_obj, p, r, v);
+
             print(dir, filename, n_obj);
 
             FREE_HOST_VECTOR((void **)&md);
@@ -696,6 +729,97 @@ int main(int argc, const char **argv)
 	string odir;
 	string filename;
 	uint32_t n_obj;
+
+#if 0
+    /*
+     * Test the distributions
+     */
+    try
+    {
+        uint32_t seed = (uint32_t)time(NULL);
+        cout << "The seed number is " << seed << endl;
+        string dir = "C:\\Work\\red.cuda.Results\\v2.0\\Test\\Distribution";
+        string path;
+
+        uint32_t n_data = 10000;
+        var_t* data = NULL;
+        ALLOCATE_HOST_VECTOR((void**)&data, n_data * sizeof(var_t));
+
+        //{
+        //    path = file::combine_path(dir, "uniform.txt");
+
+        //    uniform_distribution dist(seed);
+        //    for (uint32_t i = 0; i < n_data; i++)
+        //    {
+        //        data[i] = dist.get_next();
+        //    }
+        //    print_data(path, n_data, data);
+        //}
+
+        //{
+        //    path = file::combine_path(dir, "exponential.txt");
+
+        //    exponential_distribution dist(seed, 1.0);
+        //    for (uint32_t i = 0; i < n_data; i++)
+        //    {
+        //        data[i] = dist.get_next();
+        //    }
+        //    print_data(path, n_data, data);
+        //}
+
+        //{
+        //    path = file::combine_path(dir, "rayleigh.txt");
+
+        //    rayleigh_distribution dist(seed, 1.0);
+        //    for (uint32_t i = 0; i < n_data; i++)
+        //    {
+        //        data[i] = dist.get_next();
+        //    }
+        //    print_data(path, n_data, data);
+        //}
+
+        //{
+        //    path = file::combine_path(dir, "normal.txt");
+
+        //    normal_distribution dist(seed, 0, sqrt(2.0));
+        //    for (uint32_t i = 0; i < n_data; i++)
+        //    {
+        //        data[i] = dist.get_next();
+        //    }
+        //    print_data(path, n_data, data);
+        //}
+
+        {
+        //    path = file::combine_path(dir, "power_law_-0.99.txt");
+
+        //    power_law_distribution dist(seed, -0.99, 0.4, 5.0);
+        //    for (uint32_t i = 0; i < n_data; i++)
+        //    {
+        //        data[i] = dist.get_next();
+        //    }
+        //    print_data(path, n_data, data);
+        //}
+
+            path = file::combine_path(dir, "log_normal.txt");
+
+            lognormal_distribution dist(seed, 1.0e-4, 0.25, 0, 10);
+            for (uint32_t i = 0; i < n_data; i++)
+            {
+                data[i] = dist.get_next();
+            }
+            print_data(path, n_data, data);
+        }
+
+        FREE_HOST_VECTOR((void **)&data);
+
+        return (EXIT_SUCCESS);
+    }
+    catch (const string& msg)
+    {
+        cerr << "Error: " << msg << endl;
+        return (EXIT_FAILURE);
+    }
+#endif
 
 	n_obj = 0;
 	try

@@ -158,7 +158,7 @@ void print_number(string& path, T number)
     }
     else
     {
-        throw string("Cannot open " + path + "!");
+        throw string("Cannot open " + path + ".");
     }
 }
 template void print_number<char>(string& path, char number);
@@ -190,7 +190,7 @@ void print_oe(string &path, uint32_t n, var_t t, pp_disk_t::sim_data_t *sd)
     }
     else
     {
-        throw string("Cannot open " + path + "!");
+        throw string("Cannot open " + path + ".");
     }
 }
 
@@ -216,7 +216,7 @@ void print_oe(std::string &path, uint32_t n, var_t t, nbp_t::metadata_t* md, nbp
     }
     else
     {
-        throw string("Cannot open " + path + "!");
+        throw string("Cannot open " + path + ".");
     }
 }
 
