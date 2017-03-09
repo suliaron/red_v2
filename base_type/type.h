@@ -302,15 +302,22 @@ namespace threebody_t
 
 namespace nbp_t
 {
-	typedef struct body_metadata
-	{
-		int32_t id;             // [ 4 byte]
-	} metadata_t;               // [ 4 byte]
+    typedef struct metadata
+    {
+        int32_t id;             // [ 4 byte]
+        uchar_t body_type;      // [ 1 byte]
+        uchar_t mig_type;       // [ 1 byte]
+        bool	active;         // [ 1 byte]
+        bool	unused;         // [ 1 byte]
+        var_t   mig_stop_at;    // [ 8 byte]
+    } metadata_t;               // [16 byte]
 
-	typedef struct param
-	{
-		var_t mass;             // [ 8 byte]
-	} param_t;                  // [ 8 byte]
+    typedef struct param
+    {
+        var_t density;          // [ 8 byte]
+        var_t mass;             // [ 8 byte]
+        var_t radius;           // [ 8 byte]
+    } param_t;                  // [24 byte]
 } /* nbp_t */
 
 namespace pp_disk_t

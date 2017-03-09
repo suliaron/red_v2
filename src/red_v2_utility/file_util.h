@@ -61,20 +61,20 @@ namespace redutil2
 
         namespace nbp
         {
-        //! Print the information associated with the initial conditions
-        /*
-            \param sout print the data to this stream
-            \param t the epoch for which the initial conditions are valid
-            \param dt the initial stepsize for the integrator
-            \param dt_wc the elapsed wall-clock time since the start of the integration
-            \param repres the representation of the data (text or binary)
-        */
-		void print_solution_info(std::ofstream& sout, var_t t, var_t dt, var_t dt_wc, uint32_t n_obj, data_rep_t repres);
-        //! Print the solution for each object in text format
-        /*   
-            \param sout print the data to this stream
-        */
-        void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, nbp_t::metadata_t* md, var_t* p, var_t* y, data_rep_t repres);
+            //! Print the information associated with the initial conditions
+            /*
+                \param sout print the data to this stream
+                \param t the epoch for which the initial conditions are valid
+                \param dt the initial stepsize for the integrator
+                \param dt_wc the elapsed wall-clock time since the start of the integration
+                \param repres the representation of the data (text or binary)
+            */
+		    void print_solution_info(std::ofstream& sout, var_t t, var_t dt, var_t dt_wc, uint32_t n_obj, data_rep_t repres);
+            //! Print the solution for each object in text format
+            /*   
+                \param sout print the data to this stream
+            */
+            void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, nbp_t::metadata_t* md, nbp_t::param_t* p, var_t* y, data_rep_t repres);
         } /* namespace nbp */
 
 

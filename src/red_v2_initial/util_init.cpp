@@ -114,11 +114,19 @@ var_t generate_pp(pp_name_t name, pp_dist_t* pp_d)
 
 void generate_pp(pp_dist_t *pp_d, nbp_t::param_t& param)
 {
-    param.mass = 0.0;
+    param.mass = param.radius = param.density = 0.0;
 
     if (0x0 != pp_d->item[PP_NAME_MASS])
     {
         param.mass = generate_pp(PP_NAME_MASS, pp_d);
+    }
+    if (0x0 != pp_d->item[PP_NAME_RADIUS])
+    {
+        param.radius = generate_pp(PP_NAME_RADIUS, pp_d);
+    }
+    if (0x0 != pp_d->item[PP_NAME_DENSITY])
+    {
+        param.density = generate_pp(PP_NAME_DENSITY, pp_d);
     }
 }
 

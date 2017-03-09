@@ -488,7 +488,7 @@ namespace model
        		sout.open(path.c_str(), ios::out);
             if (sout)
             {
-                file::nbp::print_solution_data(sout, n_obj, 1, 6, md, (var_t*)p, y, DATA_REPRESENTATION_ASCII);
+                file::nbp::print_solution_data(sout, n_obj, 3, 6, md, p, y, DATA_REPRESENTATION_ASCII);
             }
             else
             {
@@ -544,13 +544,14 @@ namespace model
         {
             uint32_t seed = (uint32_t)time(NULL);
             cout << "The seed number is " << seed << endl;
-            //The pseudo-random number generator is initialized using the argument passed as seed.
+            // The pseudo-random number generator is initialized using the argument passed as seed.
             // Used by the subsequent rand() function calls
             srand(seed);
 
             // Epoch for the disk's state
             t0 = 0.0;
             const var_t m0 = 1.0;  //! Mass of the central star
+            const var_t R0 = 1.0 * constants::SolarRadiusToAu;
             oe_dist_t oe_d;
             pp_dist_t pp_d;
 
@@ -562,20 +563,21 @@ namespace model
             //oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 0.0);
             //oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 0.0);
 
-            pp_d.item[PP_NAME_MASS] = new uniform_distribution(rand(), 1.0*constants::CeresToSolar, 1.0*constants::CeresToSolar);
+            pp_d.item[PP_NAME_DENSITY] = new uniform_distribution(rand(), 2.0 * constants::GramPerCm3ToSolarPerAu3, 2.0 * constants::GramPerCm3ToSolarPerAu3);
+            pp_d.item[PP_NAME_MASS   ] = new uniform_distribution(rand(), 1.0*constants::CeresToSolar, 1.0*constants::CeresToSolar);
 
             // Increase n_obj by one to include the central body
             n_obj++;
             uint32_t n_var = 6 * n_obj;
-            uint32_t n_par = n_obj;
+            uint32_t n_par = (sizeof(nbp_t::param_t) / sizeof(var_t)) * n_obj;
             ALLOCATE_HOST_VECTOR((void**)&oe, n_obj * sizeof(orbelem_t));
             ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
             ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
             ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
             {
-                nbp_t::param_t param = { 0.0 };
-                nbp_t::metadata_t body_md = { 0 };
+                nbp_t::param_t param = { 0.0, 0.0, 0.0 };
+                nbp_t::metadata_t body_md = { 0, 0, 0, true, false, 0.0 };
                 orbelem_t _oe = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
                 var3_t rVec = { 0.0, 0.0, 0.0 };
                 var3_t vVec = { 0.0, 0.0, 0.0 };
@@ -589,11 +591,20 @@ namespace model
                 for (uint32_t i = 0; i < n_obj; i++, bodyIdx++, bodyId++)
                 {
                     body_md.id = bodyId;
+                    body_md.active = true;
+                    body_md.mig_type = MIGRATION_TYPE_NO;
+                    body_md.mig_stop_at = 0.0;
+
+                    body_md.unused = false;
 
                     // The central star
                     if (1 == bodyId)
                     {
+                        body_md.body_type = BODY_TYPE_STAR;
+
                         param.mass = m0;
+                        param.radius = R0;
+                        param.density = tools::calc_density(param.mass, param.radius);
                         uint32_t offset = 3 * i;
                         y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
                         offset += 3 * n_obj;
@@ -601,8 +612,22 @@ namespace model
                     }
                     else
                     {
+                        body_md.body_type = BODY_TYPE_PROTOPLANET;
+
                         generate_oe(&oe_d, _oe);
                         generate_pp(&pp_d, param);
+                        if (0x0 != pp_d.item[PP_NAME_MASS])
+                        {
+                            param.mass = tools::calc_mass(param.radius, param.density);
+                        }
+                        if (0x0 != pp_d.item[PP_NAME_RADIUS])
+                        {
+                            param.radius = tools::calc_radius(param.mass, param.density);
+                        }
+                        if (0x0 != pp_d.item[PP_NAME_DENSITY])
+                        {
+                            param.density = tools::calc_density(param.mass, param.radius);
+                        }
 
                         var_t mu = K2 * (m0 + param.mass);
                         tools::calc_phase(mu, &_oe, &rVec, &vVec);
