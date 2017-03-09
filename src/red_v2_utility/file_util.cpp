@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
-#include <ostream>>
+#include <ostream>
 #include <fstream>
 
 #include "file_util.h"
@@ -723,9 +723,9 @@ namespace redutil2
 		            sout.setf(ios::scientific);
 
 		            sout << setw(VAR_T_W) << t << SEP            /* time of the record [day] (double) */
-                        << setw(VAR_T_W) << dt << SEP            /* next timestep [day]      (double) */
-                        << setw(VAR_T_W) << dt_wc << SEP         /* the ellapsed time since the begining of the integration [sec]      (double) */
-                        << setw(INT_T_W) << n_obj << endl;       /* number of bodies         (uint32) */
+                         << setw(VAR_T_W) << dt << SEP            /* next timestep [day]      (double) */
+                         << setw(VAR_T_W) << dt_wc << SEP         /* the ellapsed time since the begining of the integration [sec]      (double) */
+                         << setw(INT_T_W) << n_obj << endl;       /* number of bodies         (uint32) */
 		            sout.flush();
 		            break;
 
@@ -748,7 +748,6 @@ namespace redutil2
 	            {
 	            case DATA_REPRESENTATION_ASCII:
 		            {
-		            sout.precision(16);
 		            sout.setf(ios::right);
 		            sout.setf(ios::scientific);
 
@@ -756,16 +755,18 @@ namespace redutil2
 		            for (uint32_t i = 0; i < n_obj; i++)
 		            {
                         sout << setw(INT_T_W) << md[i].id << SEP
-                            << setw(2) << md[i].body_type << SEP
-                            << setw(2) << md[i].active << SEP
-                            << setw(2) << md[i].mig_type << SEP
-                            << setw(VAR_T_W) << md[i].mig_stop_at << SEP
-                            << setw(2) << md[i].unused << SEP;
+                             << setw(2) << (int)md[i].body_type << SEP
+                             << setw(2) << md[i].active << SEP
+                             << setw(2) << (int)md[i].mig_type << SEP
+                             << setprecision(6) << setw(FLT_T_W) << md[i].mig_stop_at << SEP
+                             << setw(2) << md[i].unused1 << SEP
+                             << setw(2) << md[i].unused2 << SEP
+                             << setw(2) << md[i].unused3 << SEP;
 
                         // Print the parameters for each object
-                        sout << setw(VAR_T_W) << p[i].density << SEP
-                            << setw(VAR_T_W) << p[i].mass << SEP
-                            << setw(VAR_T_W) << p[i].radius << SEP;
+                        sout << setprecision(16) << setw(VAR_T_W) << p[i].density << SEP
+                             << setw(VAR_T_W) << p[i].mass << SEP
+                             << setw(VAR_T_W) << p[i].radius << SEP;
 
 			            // Print the variables for each object
 			            uint32_t j = 3 * i;

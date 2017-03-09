@@ -8,6 +8,7 @@
 #include "cuda_runtime.h"
 
 typedef double        var_t;
+typedef unsigned short int usi_t;
 typedef int2          int2_t;
 typedef uint2         uint2_t;
 typedef unsigned char uchar_t;
@@ -305,11 +306,13 @@ namespace nbp_t
     typedef struct metadata
     {
         int32_t id;             // [ 4 byte]
-        uchar_t body_type;      // [ 1 byte]
-        uchar_t mig_type;       // [ 1 byte]
+        usi_t   body_type;      // [ 2 byte]
+        usi_t   mig_type;       // [ 2 byte]
         bool	active;         // [ 1 byte]
-        bool	unused;         // [ 1 byte]
-        var_t   mig_stop_at;    // [ 8 byte]
+        bool	unused1;        // [ 1 byte]
+        bool	unused2;        // [ 1 byte]
+        bool	unused3;        // [ 1 byte]
+        float   mig_stop_at;    // [ 4 byte]
     } metadata_t;               // [16 byte]
 
     typedef struct param

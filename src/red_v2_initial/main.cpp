@@ -595,7 +595,7 @@ namespace model
                     body_md.mig_type = MIGRATION_TYPE_NO;
                     body_md.mig_stop_at = 0.0;
 
-                    body_md.unused = false;
+                    body_md.unused1 = body_md.unused2 = body_md.unused3 = false;
 
                     // The central star
                     if (1 == bodyId)
@@ -616,15 +616,15 @@ namespace model
 
                         generate_oe(&oe_d, _oe);
                         generate_pp(&pp_d, param);
-                        if (0x0 != pp_d.item[PP_NAME_MASS])
+                        if (0x0 == pp_d.item[PP_NAME_MASS])
                         {
                             param.mass = tools::calc_mass(param.radius, param.density);
                         }
-                        if (0x0 != pp_d.item[PP_NAME_RADIUS])
+                        if (0x0 == pp_d.item[PP_NAME_RADIUS])
                         {
                             param.radius = tools::calc_radius(param.mass, param.density);
                         }
-                        if (0x0 != pp_d.item[PP_NAME_DENSITY])
+                        if (0x0 == pp_d.item[PP_NAME_DENSITY])
                         {
                             param.density = tools::calc_density(param.mass, param.radius);
                         }

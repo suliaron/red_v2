@@ -12,7 +12,8 @@
 
 #define OUTPUT_ORDINAL_NUMBER_WIDTH    9   // The number of digits used in the output file name for the solution
 #define INT_T_W                        9   // The minimum filed width used to print out an int_t type variable
-#define VAR_T_W                       25   // The minimum filed width used to print out an var_t type variable
+#define VAR_T_W                       24   // The minimum filed width used to print out an var_t type variable
+#define FLT_T_W                       14   // The minimum filed width used to print out a float type variable
 
 
 #define K			0.01720209895
