@@ -557,14 +557,14 @@ namespace model
 
             oe_d.item[ORBELEM_NAME_SMA] = new uniform_distribution(rand(), 1.0, 2.0);
             // If the distribution is NULL than the corresponding orbital element is zero
-            //oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.0);
+            oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.3);
             //oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.0);
-            //oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 0.0);
+            oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
             //oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 0.0);
-            //oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 0.0);
+            oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
 
             pp_d.item[PP_NAME_DENSITY] = new uniform_distribution(rand(), 2.0 * constants::GramPerCm3ToSolarPerAu3, 2.0 * constants::GramPerCm3ToSolarPerAu3);
-            pp_d.item[PP_NAME_MASS   ] = new uniform_distribution(rand(), 1.0*constants::CeresToSolar, 1.0*constants::CeresToSolar);
+            pp_d.item[PP_NAME_MASS   ] = new uniform_distribution(rand(), 1.0e2*constants::CeresToSolar, 1.0e2*constants::CeresToSolar);
 
             // Increase n_obj by one to include the central body
             n_obj++;
@@ -712,6 +712,53 @@ namespace model
 			FREE_HOST_VECTOR((void **)&p);
 			FREE_HOST_VECTOR((void **)&md);
         }
+
+        void create_grav_focusing(string& dir, string& filename)
+        {
+            uint32_t n_obj = 2;
+            uint32_t n_var = 6 * n_obj;
+            uint32_t n_par = n_obj;
+            ALLOCATE_HOST_VECTOR((void**)&y, n_var * sizeof(var_t));
+            ALLOCATE_HOST_VECTOR((void**)&p, n_par * sizeof(nbp_t::param_t));
+            ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+
+            srand((unsigned int)time(NULL));
+            // Set the parameters of the problem
+            p[0].mass = 1.0 * constants::EarthToSolar, p[0].density = 2.0 * constants::GramPerCm3ToSolarPerAu3;
+            p[0].radius = tools::calc_radius(p[0].mass, p[0].density);
+            p[1].mass = 1.0e-2 * constants::EarthToSolar, p[1].density = 2.0 * constants::GramPerCm3ToSolarPerAu3;
+            p[1].radius = tools::calc_radius(p[1].mass, p[1].density);
+
+            // Set the object metadata
+            md[0].id = 1, md[0].active = true, md[0].body_type = BODY_TYPE_STAR, md[0].mig_stop_at = 0.0, md[0].mig_type = MIGRATION_TYPE_NO;
+            md[1].id = 2, md[1].active = true, md[1].body_type = BODY_TYPE_STAR, md[1].mig_stop_at = 0.0, md[1].mig_type = MIGRATION_TYPE_NO;
+
+            // Set the initial conditions at t0
+            t0 = 0.0;
+            var3_t r1 = { 0, 0, 0 };
+            var3_t v1 = { 0, 0, 0 };
+
+            var_t b = 1.0e-3;
+            var3_t r2 = { -1.0, b, 0.0 };
+            var_t v2_x = 1.0e0 * constants::KmPerSecToAuPerDay;
+            var3_t v2 = { v2_x, 0.0, 0.0 };
+
+            y[0] = r1.x, y[1] = r1.y, y[2] = r1.z;
+            y[3] = r2.x, y[4] = r2.y, y[5] = r2.z;
+
+            y[6] = v1.x, y[ 7] = v1.y, y[ 8] = v1.z;
+            y[9] = v2.x, y[10] = v2.y, y[11] = v2.z;
+
+            // Set the initial stepsize for the integrator (should be model dependent)
+            dt0 = 1.0e-4;
+
+            print(dir, filename, n_obj);
+
+            FREE_HOST_VECTOR((void **)&y);
+            FREE_HOST_VECTOR((void **)&p);
+            FREE_HOST_VECTOR((void **)&md);
+        }
+
 	} /* namespace nbody */
 } /* namespace model */
 
@@ -863,7 +910,8 @@ int main(int argc, const char **argv)
         //model::rtbp2D::create(odir, filename);
 		//model::nbody::create(odir, filename, n_obj);
 		//model::nbody::create(odir, filename);               // The two-body problem
-        model::nbody::ceate_disk(odir, filename, n_obj);
+        model::nbody::create_grav_focusing(odir, filename);
+        // model::nbody::ceate_disk(odir, filename, n_obj);
 	}
 	catch (const string& msg)
 	{

@@ -70,6 +70,9 @@ namespace constants
 	const var_t DayToYear			      = 1.0 / YearToDay;
 	const var_t SecondToDay				  = 1.0 / DayToSecond;
 
+    const var_t AuPerDayToKmPerSec        = AuToKilometer / DayToSecond;
+    const var_t KmPerSecToAuPerDay        = DayToSecond / AuToKilometer;
+
 	const var_t GramPerCm2ToEarthPerAu2   = GramToSolar*SolarToEarth / (SQR(1.0e-2*MeterToAu));
 	const var_t EarthPerAu2ToGramPerCm2   = 1.0 / GramPerCm2ToEarthPerAu2;
 
