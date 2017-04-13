@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{2dc7fabe-ccdf-42ee-b81a-0457602e88e4}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{d79f0b3a-4042-42cd-ba43-b17fadbf7f84}</UniqueIdentifier>
+      <Extensions>cpp;c;cu;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="int_euler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="int_hermite4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="int_rungekutta2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="int_rungekutta4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="int_rungekutta5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="int_rungekutta7.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="integrator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nbody.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="parameter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rtbp1D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rtbp2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rtbp3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tbp1D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tbp2D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tbp3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="threebody.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="int_euler.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="int_hermite4.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="int_rungekutta2.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="int_rungekutta4.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="int_rungekutta5.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="int_rungekutta7.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="integrator.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="main.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="nbody.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ode.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="rtbp1D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="rtbp2D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="rtbp3D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tbp1D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tbp2D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="tbp3D.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="threebody.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="options.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parameter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
