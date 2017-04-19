@@ -1354,7 +1354,7 @@ var_t calc_potential_energy(uint32_t n, const nbp_t::param_t* p, const var3_t* r
 	return (K2 * result / 2.0);
 }
 
-var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, const var3_t* r, const var3_t* v)
+var3_t calc_angular_momentum(uint32_t n, const nbp_t::param_t* p, const var3_t* r, const var3_t* v)
 {
     var3_t result = {0.0, 0.0, 0.0};
     

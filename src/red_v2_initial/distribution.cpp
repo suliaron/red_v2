@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <string>>
+#include <string>
 
 // includes, project
 #include "distribution.h"

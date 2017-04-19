@@ -151,6 +151,7 @@ void nbody::copy_metadata(copy_direction_t dir)
 	}
 }
 
+// For Hermite4
 void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
 {
 	if (PROC_UNIT_CPU == comp_dev.proc_unit)
@@ -160,15 +161,16 @@ void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* ac
 	}
 	else
 	{
-		throw string("The nbody::gpu_calc_dy is not implemented.");
+		throw string("The nbody::gpu_calc_dy for Hermite4 is not implemented.");
 	}
 }
 
+// For Runge-Kutta type integrators
 void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
 	if (PROC_UNIT_CPU == comp_dev.proc_unit)
 	{
-		cpu_calc_dy(stage, curr_t, y_temp, dy, true);
+		cpu_calc_dy(stage, curr_t, y_temp, dy);
 	}
 	else
 	{
@@ -179,15 +181,20 @@ void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 // For Hermite4
 void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk, bool use_symm_prop)
 {
-	var3_t* r = (var3_t*)y_temp;
-    var3_t* v = (var3_t*)(y_temp + NDIM * n_obj);
-	var3_t* _acc = (var3_t*)(acc);
-	var3_t* _jrk = (var3_t*)(jrk);
-	// Clear the acceleration and jerk arrays: the += op can be used
-	memset(_acc, 0, n_obj*sizeof(var3_t));
-	memset(_jrk, 0, n_obj*sizeof(var3_t));
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
 
-	const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+    // Create aliases
+    const var3_t* r = (var3_t*)y_temp;
+    const var3_t* v = (var3_t*)(y_temp + nv);
+    const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+    
+    var3_t* _acc = (var3_t*)(acc);
+	var3_t* _jrk = (var3_t*)(jrk);
+
+    // Clear the acceleration and jerk arrays: the += op can be used
+	memset(_acc, 0, n_obj * sizeof(var3_t));
+	memset(_jrk, 0, n_obj * sizeof(var3_t));
 
 	if (use_symm_prop)
 	{
@@ -231,82 +238,50 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 }
 
 // For Runge-Kutta type integrators
-void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop)
+void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
     // Number of space and velocity coordinates
     const uint32_t nv = NDIM * n_obj;
+
     // Create aliases
     const var3_t* r = (var3_t*)y_temp;
     const var3_t* v = (var3_t*)(y_temp + nv);
+    const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
     var3_t* a = (var3_t*)(dy + nv);
 
     // Copy the velocities into dy
     memcpy(dy, v, nv * sizeof(var_t));
+
     // Clear the acceleration array: the += op can be used
 	memset(a, 0, nv *sizeof(var_t));
-
-	const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-
-	if (use_symm_prop)
+	for (uint32_t i = 0; i < n_obj; i++)
 	{
-		for (uint32_t i = 0; i < n_obj; i++)
+		var3_t r_ij = {0, 0, 0};
+		for (uint32_t j = i+1; j < n_obj; j++)
 		{
-			var3_t r_ij = {0, 0, 0};
-			for (uint32_t j = i+1; j < n_obj; j++)
-			{
-				r_ij.x = r[j].x - r[i].x;
-				r_ij.y = r[j].y - r[i].y;
-				r_ij.z = r[j].z - r[i].z;
+			r_ij.x = r[j].x - r[i].x;
+			r_ij.y = r[j].y - r[i].y;
+			r_ij.z = r[j].z - r[i].z;
 
-				var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-				var_t d = sqrt(d2);
-                //var_t d_3 = 1.0 / (d*d2);
-                var_t d_3 = K2 / (d*d2);
+			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+			var_t d = sqrt(d2);
+            var_t d_3 = 1.0 / (d*d2);
+            //var_t d_3 = K2 / (d*d2);
 
-				var_t s = p[j].mass * d_3;
-				a[i].x += s * r_ij.x;
-				a[i].y += s * r_ij.y;
-				a[i].z += s * r_ij.z;
+			var_t s = p[j].mass * d_3;
+			a[i].x += s * r_ij.x;
+			a[i].y += s * r_ij.y;
+			a[i].z += s * r_ij.z;
 
-				s = p[i].mass * d_3;
-				a[j].x -= s * r_ij.x;
-				a[j].y -= s * r_ij.y;
-				a[j].z -= s * r_ij.z;
-			}
-			//a[i].x *= K2;
-			//a[i].y *= K2;
-			//a[i].z *= K2;
+			s = p[i].mass * d_3;
+			a[j].x -= s * r_ij.x;
+			a[j].y -= s * r_ij.y;
+			a[j].z -= s * r_ij.z;
 		}
-	}
-	else
-	{
-		for (uint32_t i = 0; i < n_obj; i++)
-		{
-			var3_t r_ij = {0, 0, 0};
-			for (uint32_t j = 0; j < n_obj; j++)
-			{
-				if (i == j)
-				{
-					continue;
-				}
-				r_ij.x = r[j].x - r[i].x;
-				r_ij.y = r[j].y - r[i].y;
-				r_ij.z = r[j].z - r[i].z;
-
-				var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-				var_t d = sqrt(d2);
-                //var_t d_3 = 1.0 / (d*d2);
-                var_t d_3 = K2 / (d*d2);
-
-				var_t s = p[j].mass * d_3;
-				a[i].x += s * r_ij.x;
-				a[i].y += s * r_ij.y;
-				a[i].z += s * r_ij.z;
-			}
-			//a[i].x *= K2;
-			//a[i].y *= K2;
-			//a[i].z *= K2;
-		}
+		a[i].x *= K2;
+		a[i].y *= K2;
+		a[i].z *= K2;
 	}
 }
 
@@ -314,21 +289,22 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 {
     // Number of space and velocity coordinates
     const uint32_t nv = NDIM * n_obj;
+
     // Create aliases
     const var3_t* r = (var3_t*)y_temp;
     const var3_t* v = (var3_t*)(y_temp + nv);
+    const nbp_t::param_t* p = (nbp_t::param_t*)d_p;
+
     var3_t* a = (var3_t*)(dy + nv);
     
+    // Copy the velocities into dy
+    CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
+
     // TODO: do a benchmark and set the optimal thread number
 	{
 		n_tpb = 256;
 	}
 	set_kernel_launch_param(n_var, n_tpb, grid, block);
-
-	const nbp_t::param_t* p = (nbp_t::param_t*)d_p;
-
-	// TODO: use asynchronous copy operation
-	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + nv, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
 
 	kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, p, r, a);
 	CUDA_CHECK_ERROR();
@@ -369,7 +345,6 @@ void nbody::chk_coll(var_t a_ref)
     const var3_t* r = (var3_t*)h_y;
     const var3_t* v = (var3_t*)(h_y + nv);
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-
 
     var_t min_d = DBL_MAX;
     for (uint32_t i = 0; i < n_obj; i++)

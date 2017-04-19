@@ -46,7 +46,9 @@ inline void __cudaSafeCall( cudaError err, const char *file, const int line )
     {
 		char buffer[500];
 
-		sprintf(buffer,"cudaSafeCall() failed at %s:%i : %s", file, line, cudaGetErrorString( err ) );
+		//sprintf(buffer,"cudaSafeCall() failed at %s:%i : %s", file, line, cudaGetErrorString( err ) );
+        snprintf(buffer, sizeof(buffer) - 1, "cudaSafeCall() failed at %s:%i : %s", file, line, cudaGetErrorString(err));
+
 		std::string msg(buffer);
 		throw msg;
     }
@@ -63,8 +65,9 @@ inline void __cudaCheckError( const char *file, const int line )
     {
 		char buffer[500];
 
-		sprintf(buffer,"cudaCheckError() failed at %s:%i : %s", file, line, cudaGetErrorString( err ) );
-		std::string msg(buffer);
+		//sprintf(buffer,"cudaCheckError() failed at %s:%i : %s", file, line, cudaGetErrorString( err ) );
+        snprintf(buffer, sizeof(buffer) - 1, "cudaCheckError() failed at %s:%i : %s", file, line, cudaGetErrorString(err));
+        std::string msg(buffer);
 		throw msg;
     }
  
@@ -75,7 +78,8 @@ inline void __cudaCheckError( const char *file, const int line )
     {
 		char buffer[500];
 
-		sprintf(buffer,"cudaCheckError() with sync failed at %s:%i : %s", file, line, cudaGetErrorString( err ) );
+		//sprintf(buffer,"cudaCheckError() with sync failed at %s:%i : %s", file, line, cudaGetErrorString( err ) );
+        snprintf(buffer, sizeof(buffer) - 1, "cudaCheckError() with sync failed at %s:%i : %s", file, line, cudaGetErrorString(err));
 		std::string msg(buffer);
 		throw msg;
     }

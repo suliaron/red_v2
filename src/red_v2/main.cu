@@ -114,7 +114,7 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 
 void print_info(options* opt, ode* f, integrator* intgr, var_t dt, var_t total_t)
 {
-    static char FMT_STR[] = "%s %s %13.7e %10.4e  %12.6e %9.3e  %12llu %12llu\n";
+    static char FMT_STR[] = "%s %s %13.7e %10.4e  %12.6e %9.3e  %12llu %12llu %12llu\n";
     string fn_info;
     string path;
 
@@ -131,11 +131,12 @@ void print_info(options* opt, ode* f, integrator* intgr, var_t dt, var_t total_t
     var_t dt_did = intgr->get_dt_did();
     uint64_t np = intgr->get_n_passed_step();
     uint64_t nf = intgr->get_n_failed_step();
+    uint64_t nt = intgr->get_n_tried_step();
 
-    fprintf(fout, FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, np, nf);
+    fprintf(fout, FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, np, nf, nt);
     if (opt->print_to_screen)
     {
-        printf(FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, np, nf);
+        printf(FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, np, nf, nt);
     }
     fclose(fout);
 }
@@ -181,11 +182,11 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	 */
 	while (f->t <= opt->param->simulation_length)
 	{
-        if (DYN_MODEL_NBODY == opt->dyn_model)
-        {
-            nbody* nb = (nbody*)f;
-            nb->chk_coll(opt->param->threshold[THRESHOLD_RADII_ENHANCE_FACTOR]);
-        }
+        //if (DYN_MODEL_NBODY == opt->dyn_model)
+        //{
+        //    nbody* nb = (nbody*)f;
+        //    nb->chk_coll(opt->param->threshold[THRESHOLD_RADII_ENHANCE_FACTOR]);
+        //}
 
 		// make the integration step, and measure the time it takes
         t0 = chrono::system_clock::now();
