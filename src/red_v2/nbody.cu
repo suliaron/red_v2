@@ -11,6 +11,10 @@
 #include "redutil2.h"
 #include "constants.h"
 
+#define NDIM   3        // Number of space dimension
+#define NVPO   6        // Number of variables per object (3 space and 3 velocity coordinates)
+
+
 using namespace std;
 using namespace redutil2;
 
@@ -62,7 +66,7 @@ void calc_grav_accel_naive
 } /* kernel_nbody */
 
 nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev) :
-	ode(3, n_obj, 6, n_ppo, comp_dev)
+	ode(NDIM, n_obj, NVPO, n_ppo, comp_dev)
 {
 	name = "Singular 3D n-body problem";
 	
@@ -176,14 +180,14 @@ void nbody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk, bool use_symm_prop)
 {
 	var3_t* r = (var3_t*)y_temp;
-    var3_t* v = (var3_t*)(y_temp + 3*n_obj);
+    var3_t* v = (var3_t*)(y_temp + NDIM * n_obj);
 	var3_t* _acc = (var3_t*)(acc);
 	var3_t* _jrk = (var3_t*)(jrk);
 	// Clear the acceleration and jerk arrays: the += op can be used
 	memset(_acc, 0, n_obj*sizeof(var3_t));
 	memset(_jrk, 0, n_obj*sizeof(var3_t));
 
-	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+	const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
 	if (use_symm_prop)
 	{
@@ -229,15 +233,19 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 // For Runge-Kutta type integrators
 void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy, bool use_symm_prop)
 {
-	// Copy the velocities into dy
-	memcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t));
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+    // Create aliases
+    const var3_t* r = (var3_t*)y_temp;
+    const var3_t* v = (var3_t*)(y_temp + nv);
+    var3_t* a = (var3_t*)(dy + nv);
 
-	var3_t* r = (var3_t*)y_temp;
-	var3_t* a = (var3_t*)(dy + 3*n_obj);
-	// Clear the acceleration array: the += op can be used
-	memset(a, 0, 3*n_obj*sizeof(var_t));
+    // Copy the velocities into dy
+    memcpy(dy, v, nv * sizeof(var_t));
+    // Clear the acceleration array: the += op can be used
+	memset(a, 0, nv *sizeof(var_t));
 
-	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+	const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
 	if (use_symm_prop)
 	{
@@ -304,18 +312,23 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 
 void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	// TODO: do a benchmark and set the optimal thread number
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+    // Create aliases
+    const var3_t* r = (var3_t*)y_temp;
+    const var3_t* v = (var3_t*)(y_temp + nv);
+    var3_t* a = (var3_t*)(dy + nv);
+    
+    // TODO: do a benchmark and set the optimal thread number
 	{
 		n_tpb = 256;
 	}
 	set_kernel_launch_param(n_var, n_tpb, grid, block);
 
-	var3_t* r = (var3_t*)y_temp;
-	var3_t* a = (var3_t*)(dy + 3*n_obj);
-	nbp_t::param_t* p = (nbp_t::param_t*)d_p;
+	const nbp_t::param_t* p = (nbp_t::param_t*)d_p;
 
 	// TODO: use asynchronous copy operation
-	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + 3*n_obj, 3*n_obj*sizeof(var_t), cudaMemcpyDeviceToDevice));
+	CUDA_SAFE_CALL(cudaMemcpy(dy, y_temp + nv, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
 
 	kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, p, r, a);
 	CUDA_CHECK_ERROR();
@@ -325,10 +338,12 @@ void nbody::calc_integral()
 {
 	static bool first_call = true;
 
-	nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-
-	var3_t* r = (var3_t*)h_y;
-	var3_t* v = (var3_t*)(h_y + 3*n_obj);
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+    // Create aliases
+    const var3_t* r = (var3_t*)h_y;
+    const var3_t* v = (var3_t*)(h_y + nv);
+    const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
 	integral.R = tools::nbp::calc_position_of_bc(n_obj, p, r);
 	integral.V = tools::nbp::calc_velocity_of_bc(n_obj, p, v);
@@ -348,9 +363,13 @@ void nbody::calc_integral()
 
 void nbody::chk_coll(var_t a_ref)
 {
-    var3_t* r = (var3_t*)h_y;
-    var3_t* v = (var3_t*)(h_y + 3*n_obj);
-    nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+    // Create aliases
+    const var3_t* r = (var3_t*)h_y;
+    const var3_t* v = (var3_t*)(h_y + nv);
+    const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
 
     var_t min_d = DBL_MAX;
     for (uint32_t i = 0; i < n_obj; i++)
@@ -489,16 +508,19 @@ void nbody::load_solution_data(string& path)
 
 void nbody::load_ascii(ifstream& input)
 {
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+
     nbp_t::param_t* _p = (nbp_t::param_t*)h_p;
 
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
         input >> h_md[i].id >> h_md[i].body_type >> h_md[i].active >> h_md[i].mig_type >> h_md[i].mig_stop_at >> h_md[i].unused1 >> h_md[i].unused2 >> h_md[i].unused3;
         input >> _p[i].density >> _p[i].mass >> _p[i].radius;
-		uint32_t offset = 3*i;
+		uint32_t offset = NDIM * i;
 		// position
 		input >> h_y[offset+0] >> h_y[offset+1] >> h_y[offset+2];
-		offset += 3*n_obj;
+		offset += nv;
 		// velocity
 		input >> h_y[offset+0] >> h_y[offset+1] >> h_y[offset+2];
 	}
@@ -508,7 +530,7 @@ void nbody::load_binary(ifstream& input)
 {
     input.read((char*)h_md, n_obj * sizeof(nbp_t::metadata_t));
     input.read((char*)h_p, n_obj * sizeof(nbp_t::param_t));
-    input.read((char*)h_y, 6 * n_obj * sizeof(var_t));
+    input.read((char*)h_y, NVPO * n_obj * sizeof(var_t));
 }
 
 void nbody::print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres)
@@ -602,3 +624,6 @@ void nbody::print_integral(string& path)
 	}
 	sout.close();
 }
+
+#undef NDIM
+#undef NVPO

@@ -1302,7 +1302,7 @@ var_t calc_integral(var_t mu, var2_t u, var2_t up)
 
 namespace nbp
 {
-var_t get_total_mass(uint32_t n, nbp_t::param_t* p)
+var_t get_total_mass(uint32_t n, const nbp_t::param_t* p)
 {
 	var_t M0 = 0.0;
 
@@ -1314,7 +1314,7 @@ var_t get_total_mass(uint32_t n, nbp_t::param_t* p)
 	return M0 ;
 }
 	
-var_t calc_total_energy(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
+var_t calc_total_energy(uint32_t n, const nbp_t::param_t* p, const var3_t* r, const var3_t* v)
 {
 	var_t T = calc_kinetic_energy(n, p, v);
 	var_t U = calc_potential_energy(n, p, r);
@@ -1322,7 +1322,7 @@ var_t calc_total_energy(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
 	return h;
 }
 
-var_t calc_kinetic_energy(uint32_t n, nbp_t::param_t* p, var3_t* v)
+var_t calc_kinetic_energy(uint32_t n, const nbp_t::param_t* p, const var3_t* v)
 {	
 	var_t result = 0.0;
 
@@ -1334,7 +1334,7 @@ var_t calc_kinetic_energy(uint32_t n, nbp_t::param_t* p, var3_t* v)
     return (result / 2.0);
 }
 
-var_t calc_potential_energy(uint32_t n, nbp_t::param_t* p, var3_t* r)
+var_t calc_potential_energy(uint32_t n, const nbp_t::param_t* p, const var3_t* r)
 {
 	var_t result = 0.0;
 
@@ -1354,7 +1354,7 @@ var_t calc_potential_energy(uint32_t n, nbp_t::param_t* p, var3_t* r)
 	return (K2 * result / 2.0);
 }
 
-var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
+var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, const var3_t* r, const var3_t* v)
 {
     var3_t result = {0.0, 0.0, 0.0};
     
@@ -1369,7 +1369,7 @@ var3_t calc_angular_momentum(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v
 	return result;
 }
 
-var3_t calc_position_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* r)
+var3_t calc_position_of_bc(uint32_t n, const nbp_t::param_t* p, const var3_t* r)
 {
     var3_t R0 = {0.0, 0.0, 0.0};
 
@@ -1384,7 +1384,7 @@ var3_t calc_position_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* r)
 	return R0;
 }
 
-var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v)
+var3_t calc_velocity_of_bc(uint32_t n, const nbp_t::param_t* p, const var3_t* v)
 {
     var3_t V0 = {0.0, 0.0, 0.0};
 
@@ -1399,7 +1399,7 @@ var3_t calc_velocity_of_bc(uint32_t n, nbp_t::param_t* p, var3_t* v)
 	return V0;
 }
 
-void transform_to_bc(uint32_t n, nbp_t::param_t* p, var3_t* r, var3_t* v)
+void transform_to_bc(uint32_t n, const nbp_t::param_t* p, var3_t* r, var3_t* v)
 {
     var_t M0 = get_total_mass(n, p);
     var3_t R0 = calc_position_of_bc(n, p, r);

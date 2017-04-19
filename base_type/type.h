@@ -251,6 +251,7 @@ typedef struct ode_data
 
 	ode_data()
 	{
+        t = tout = 0.0;
 		comp_dev.proc_unit = PROC_UNIT_CPU;
 		comp_dev.id_dev = 0;
 
