@@ -24,7 +24,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="main.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AA8813B1-7EB2-4F11-80E2-D23D42D529B7}</ProjectGuid>

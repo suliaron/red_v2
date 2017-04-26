@@ -10,210 +10,212 @@
 typedef double        var_t;
 typedef unsigned short int usi_t;
 typedef int2          int2_t;
-typedef uint2         uint2_t;
 typedef unsigned char uchar_t;
 
-typedef enum copy_direction
-		{
-			COPY_DIRECTION_TO_HOST,
-			COPY_DIRECTION_TO_DEVICE,
-			COPY_DIRECTION_TO_N
-		} copy_direction_t;
+typedef enum
+{
+	COPY_DIRECTION_TO_HOST,
+	COPY_DIRECTION_TO_DEVICE,
+	COPY_DIRECTION_TO_N
+} copy_direction_t;
 
-typedef enum dyn_model
-		{
-			DYN_MODEL_TBP1D,     /* 0 */
-			DYN_MODEL_TBP2D,     /* 1 */
-			DYN_MODEL_TBP3D,     /* 2 */
+typedef enum 
+{
+	DYN_MODEL_TBP1D,     /* 0 */
+	DYN_MODEL_TBP2D,     /* 1 */
+	DYN_MODEL_TBP3D,     /* 2 */
 
-			DYN_MODEL_RTBP1D,    /* 3 */
-			DYN_MODEL_RTBP2D,    /* 4 */
-			DYN_MODEL_RTBP3D,    /* 5 */
+	DYN_MODEL_RTBP1D,    /* 3 */
+	DYN_MODEL_RTBP2D,    /* 4 */
+	DYN_MODEL_RTBP3D,    /* 5 */
 
-			DYN_MODEL_THREEBODY, /* 6 */
-			DYN_MODEL_NBODY,     /* 7 */
+	DYN_MODEL_THREEBODY, /* 6 */
+	DYN_MODEL_NBODY,     /* 7 */
 
-			DYN_MODEL_N
-		} dyn_model_t;
+	DYN_MODEL_N
+} dyn_model_t;
 
-typedef enum input_format_name
-		{
-			INPUT_FORMAT_RED,
-			INPUT_FORMAT_NONAME,
-			INPUT_FORMAT_HIPERION,
-            INPUT_FORMAT_N
-		} input_format_name_t;
+typedef enum 
+{
+	INPUT_FORMAT_RED,
+	INPUT_FORMAT_NONAME,
+	INPUT_FORMAT_HIPERION,
+    INPUT_FORMAT_N
+} input_format_name_t;
 
-typedef enum output_name
-		{
-			OUTPUT_NAME_LOG,
-			OUTPUT_NAME_INFO,
-			OUTPUT_NAME_EVENT,
-			OUTPUT_NAME_SOLUTION_DATA,
-			OUTPUT_NAME_SOLUTION_INFO,
-			OUTPUT_NAME_INTEGRAL,
-			OUTPUT_NAME_INTEGRAL_EVENT,
-			OUTPUT_NAME_N
-		} output_name_t;
+typedef enum 
+{
+	OUTPUT_NAME_LOG,
+	OUTPUT_NAME_INFO,
+	OUTPUT_NAME_EVENT,
+	OUTPUT_NAME_SOLUTION_DATA,
+	OUTPUT_NAME_SOLUTION_INFO,
+	OUTPUT_NAME_INTEGRAL,
+	OUTPUT_NAME_INTEGRAL_EVENT,
+	OUTPUT_NAME_N
+} output_name_t;
 
-typedef enum input_name
-		{
-			INPUT_NAME_START_FILES,
-			INPUT_NAME_IC_DATA,
-			INPUT_NAME_IC_INFO,
-			INPUT_NAME_PARAMETER,
-			INPUT_NAME_GAS_DISK_MODEL,
-			INPUT_NAME_N
-		} input_name_t;
+typedef enum 
+{
+	INPUT_NAME_START_FILES,
+	INPUT_NAME_IC_DATA,
+	INPUT_NAME_IC_INFO,
+	INPUT_NAME_PARAMETER,
+	INPUT_NAME_GAS_DISK_MODEL,
+	INPUT_NAME_N
+} input_name_t;
 
-typedef enum directory_name
-		{
-			DIRECTORY_NAME_IN,
-			DIRECTORY_NAME_OUT,
-			DIRECTORY_NAME_N
-		} directory_name_t;
+typedef enum 
+{
+	DIRECTORY_NAME_IN,
+	DIRECTORY_NAME_OUT,
+	DIRECTORY_NAME_N
+} directory_name_t;
 
-typedef enum data_rep
-		{
-			DATA_REPRESENTATION_ASCII,
-			DATA_REPRESENTATION_BINARY,
-			DATA_REPRESENTATION_N,
-		} data_rep_t;
+typedef enum 
+{
+	DATA_REPRESENTATION_ASCII,
+	DATA_REPRESENTATION_BINARY,
+	DATA_REPRESENTATION_N,
+} data_rep_t;
 
-typedef enum gas_decrease
-		{ 
-			GAS_DENSITY_CONSTANT,
-			GAS_DENSITY_DECREASE_LINEAR,
-			GAS_DENSITY_DECREASE_EXPONENTIAL,
-			GAS_DENSITY_N
-		} gas_decrease_t;
+typedef enum 
+{ 
+	GAS_DENSITY_CONSTANT,
+	GAS_DENSITY_DECREASE_LINEAR,
+	GAS_DENSITY_DECREASE_EXPONENTIAL,
+	GAS_DENSITY_N
+} gas_decrease_t;
 
-typedef enum gas_disk_model
-		{
-			GAS_DISK_MODEL_NONE,
-			GAS_DISK_MODEL_ANALYTIC,
-			GAS_DISK_MODEL_FARGO,
-			GAS_DISK_MODEL_N,
-		} gas_disk_model_t;
+typedef enum 
+{
+	GAS_DISK_MODEL_NONE,
+	GAS_DISK_MODEL_ANALYTIC,
+	GAS_DISK_MODEL_FARGO,
+	GAS_DISK_MODEL_N,
+} gas_disk_model_t;
 
-typedef enum proc_unit
-		{
-			PROC_UNIT_CPU,
-			PROC_UNIT_GPU,
-			PROC_UNIT_N
-		} proc_unit_t;
+typedef enum 
+{
+	PROC_UNIT_CPU,
+	PROC_UNIT_GPU,
+	PROC_UNIT_N
+} proc_unit_t;
 
-typedef enum mem_loc
-		{
-			MEM_LOC_HOST,
-			MEM_LOC_DEVICE,
-			MEM_LOC_N
-		} mem_loc_t;
+typedef enum 
+{
+	MEM_LOC_HOST,
+	MEM_LOC_DEVICE,
+	MEM_LOC_N
+} mem_loc_t;
 
-typedef enum threshold
-		{
-			THRESHOLD_HIT_CENTRUM_DISTANCE,  //! inside this limit the body is considered to have hitted the central body and removed from the simulation [AU]
-			THRESHOLD_EJECTION_DISTANCE,     //! beyond this limit the body is removed from the simulation [AU]
-			THRESHOLD_RADII_ENHANCE_FACTOR,  //! two bodies collide when their mutual distance is smaller than the sum of their radii multiplied by this number. Real physical collision corresponds to the value of 1.0.
-			THRESHOLD_N
-		} threshold_t;
+typedef enum 
+{
+	THRESHOLD_HIT_CENTRUM_DISTANCE,  //! inside this limit the body is considered to have hitted the central body and removed from the simulation [AU]
+	THRESHOLD_EJECTION_DISTANCE,     //! beyond this limit the body is removed from the simulation [AU]
+	THRESHOLD_RADII_ENHANCE_FACTOR,  //! two bodies collide when their mutual distance is smaller than the sum of their radii multiplied by this number. Real physical collision corresponds to the value of 1.0.
+	THRESHOLD_N
+} threshold_t;
 
-typedef enum integrator_type
-		{ 
-			INTEGRATOR_EULER,
-			INTEGRATOR_RUNGEKUTTA2,
-			INTEGRATOR_RUNGEKUTTA4,
-			INTEGRATOR_RUNGEKUTTA5,
-			INTEGRATOR_RUNGEKUTTA7,
-            INTEGRATOR_HERMITE4,
-            INTEGRATOR_HERMITE4B,
-			INTEGRATOR_N
-		} integrator_type_t;
+typedef enum 
+{ 
+	INTEGRATOR_EULER,
+	INTEGRATOR_RUNGEKUTTA2,
+	INTEGRATOR_RUNGEKUTTA4,
+	INTEGRATOR_RUNGEKUTTA5,
+	INTEGRATOR_RUNGEKUTTA7,
+    INTEGRATOR_HERMITE4,
+    INTEGRATOR_HERMITE4B,
+	INTEGRATOR_N
+} integrator_type_t;
 
-typedef enum event_name
-		{
-			EVENT_NAME_NONE,
-			EVENT_NAME_HIT_CENTRUM,
-			EVENT_NAME_EJECTION,
-			EVENT_NAME_COLLISION,
-			EVENT_NAME_N
-		} event_name_t;
+typedef enum 
+{
+	EVENT_NAME_NONE,
+	EVENT_NAME_HIT_CENTRUM,
+	EVENT_NAME_EJECTION,
+	EVENT_NAME_COLLISION,
+	EVENT_NAME_N
+} event_name_t;
 
-typedef enum event_counter_name
-		{
-			EVENT_COUNTER_NAME_TOTAL,
-			EVENT_COUNTER_NAME_LAST_CLEAR,
-			EVENT_COUNTER_NAME_LAST_STEP,
-			EVENT_COUNTER_NAME_N
-		} event_counter_name_t;
+typedef enum 
+{
+	EVENT_COUNTER_NAME_TOTAL,
+	EVENT_COUNTER_NAME_LAST_CLEAR,
+	EVENT_COUNTER_NAME_LAST_STEP,
+	EVENT_COUNTER_NAME_N
+} event_counter_name_t;
 
-typedef enum migration_type
-		{
-			MIGRATION_TYPE_NO,
-			MIGRATION_TYPE_TYPE_I,
-			MIGRATION_TYPE_TYPE_II,
-			MIGRATION_TYPE_N
-		} migration_type_t;
+typedef enum 
+{
+	MIGRATION_TYPE_NO,
+	MIGRATION_TYPE_TYPE_I,
+	MIGRATION_TYPE_TYPE_II,
+	MIGRATION_TYPE_N
+} migration_type_t;
 
-typedef enum body_type
-		{
-			BODY_TYPE_STAR,
-			BODY_TYPE_GIANTPLANET,
-			BODY_TYPE_ROCKYPLANET,
-			BODY_TYPE_PROTOPLANET,
-			BODY_TYPE_SUPERPLANETESIMAL,
-			BODY_TYPE_PLANETESIMAL,
-			BODY_TYPE_TESTPARTICLE,
-			BODY_TYPE_N
-		} body_type_t;
+typedef enum 
+{
+	BODY_TYPE_STAR,
+	BODY_TYPE_GIANTPLANET,
+	BODY_TYPE_ROCKYPLANET,
+	BODY_TYPE_PROTOPLANET,
+	BODY_TYPE_SUPERPLANETESIMAL,
+	BODY_TYPE_PLANETESIMAL,
+	BODY_TYPE_TESTPARTICLE,
+	BODY_TYPE_N
+} body_type_t;
 
-typedef struct comp_dev
-		{
-			proc_unit_t proc_unit;
-			int         id_dev;                //!< The id of the device which will execute the code
-		} comp_dev_t;
+typedef struct 
+{
+	proc_unit_t proc_unit;
+	int         id_dev;                //!< The id of the device which will execute the code
+} comp_dev_t;
 
-// var2_t gets aligned to 16 bytes.
-typedef struct var2
-		{
-			var_t x;     // [ 8 byte]
-			var_t y;     // [ 8 byte]
-		} var2_t;        // [16 byte]
+typedef struct
+{
+    uint32_t n1;
+    uint32_t n2;
+} uint2_t;
 
-// var3_t gets aligned to 16 bytes.
-typedef struct var3
-		{
-			var_t x;     // [ 8 byte]
-			var_t y;     // [ 8 byte]
-			var_t z;     // [ 8 byte]
-		} var3_t;        // [24 byte]
+typedef struct 
+{
+	var_t x;     // [ 8 byte]
+	var_t y;     // [ 8 byte]
+} var2_t;        // [16 byte]
 
-// var4_t gets aligned to 16 bytes.
-typedef struct var4
-		{
-			var_t x;     // [ 8 byte]
-			var_t y;     // [ 8 byte]
-			var_t z;     // [ 8 byte]
-			var_t w;     // [ 8 byte]
-		} var4_t;        // [32 byte]
+typedef struct 
+{
+	var_t x;     // [ 8 byte]
+	var_t y;     // [ 8 byte]
+	var_t z;     // [ 8 byte]
+} var3_t;        // [24 byte]
 
-typedef struct matrix4
-		{
-			var4_t a;    // [ 32 byte]
-			var4_t b;    // [ 32 byte]
-			var4_t c;    // [ 32 byte]
-			var4_t d;    // [ 32 byte]
-		} matrix4_t;     // [128 byte]
+typedef struct 
+{
+	var_t x;     // [ 8 byte]
+	var_t y;     // [ 8 byte]
+	var_t z;     // [ 8 byte]
+	var_t w;     // [ 8 byte]
+} var4_t;        // [32 byte]
 
-typedef struct orbelem
-		{			
-			var_t sma;   //!< Semimajor-axis of the body       [8 byte]
-			var_t ecc;   //!< Eccentricity of the body         [8 byte]
-			var_t inc;   //!< Inclination of the body          [8 byte]
-			var_t peri;  //!< Argument of the pericenter       [8 byte]
-			var_t node;  //!< Longitude of the ascending node  [8 byte]
-			var_t mean;  //!< Mean anomaly                     [8 byte]
-		} orbelem_t;     // [48 byte]
+typedef struct 
+{
+	var4_t a;    // [ 32 byte]
+	var4_t b;    // [ 32 byte]
+	var4_t c;    // [ 32 byte]
+	var4_t d;    // [ 32 byte]
+} matrix4_t;     // [128 byte]
+
+typedef struct 
+{			
+	var_t sma;   //!< Semimajor-axis of the body       [8 byte]
+	var_t ecc;   //!< Eccentricity of the body         [8 byte]
+	var_t inc;   //!< Inclination of the body          [8 byte]
+	var_t peri;  //!< Argument of the pericenter       [8 byte]
+	var_t node;  //!< Longitude of the ascending node  [8 byte]
+	var_t mean;  //!< Mean anomaly                     [8 byte]
+} orbelem_t;     // [48 byte]
 
 typedef struct ode_data
 {
@@ -278,12 +280,12 @@ typedef struct integral
 
 namespace tbp_t
 {
-	typedef struct metadata
+	typedef struct 
 	{
 		int32_t id;
 	} metadata_t;
 
-	typedef struct param
+	typedef struct 
 	{
 		var_t mu;
 	} param_t;
@@ -291,12 +293,12 @@ namespace tbp_t
 
 namespace threebody_t
 {
-	typedef struct metadata
+	typedef struct 
 	{
 		int32_t id;
 	} metadata_t;
 
-	typedef struct param
+	typedef struct 
 	{
 		var_t m;
 	} param_t;
@@ -304,7 +306,7 @@ namespace threebody_t
 
 namespace nbp_t
 {
-    typedef struct metadata
+    typedef struct 
     {
         int32_t id;             // [ 4 byte]
         usi_t   body_type;      // [ 2 byte]
@@ -316,7 +318,7 @@ namespace nbp_t
         float   mig_stop_at;    // [ 4 byte]
     } metadata_t;               // [16 byte]
 
-    typedef struct param
+    typedef struct 
     {
         var_t density;          // [ 8 byte]
         var_t mass;             // [ 8 byte]
@@ -327,7 +329,7 @@ namespace nbp_t
 namespace pp_disk_t
 {
 	// body_metadata_t gets aligned to 16 bytes.
-	typedef struct  body_metadata
+	typedef struct
 	{
 		int32_t id;             // [ 4 byte]
 		uchar_t body_type;      // [ 1 byte]
@@ -338,7 +340,7 @@ namespace pp_disk_t
 	} body_metadata_t;          // [16 byte]
 
 	// param_t gets aligned to 16 bytes.
-	typedef struct  param
+	typedef struct
 	{
 		var_t mass;             // [ 8 byte]
 		var_t radius;           // [ 8 byte]
@@ -346,7 +348,7 @@ namespace pp_disk_t
 		var_t cd;	            // [ 8 byte]
 	} param_t;                  // [32 byte]
 
-	typedef struct integral
+	typedef struct
 	{			
 		var4_t R;               //!< Position vector of the system's barycenter [32 byte]
 		var4_t V;               //!< Velocity vector of the system's barycenter [32 byte]
@@ -493,8 +495,8 @@ struct interaction_bound
 
 	interaction_bound()
 	{
-		sink.x   = sink.y   = 0;
-		source.x = source.y = 0;
+		sink.n1   = sink.n2   = 0;
+		source.n1 = source.n2 = 0;
 	}
 
 	interaction_bound(uint2_t sink, uint2_t source) : 
@@ -504,8 +506,8 @@ struct interaction_bound
 
 	interaction_bound(uint32_t x0, uint32_t y0, uint32_t x1, uint32_t y1)
 	{
-		sink.x = x0;		sink.y = y0;
-		source.x = x1;		source.y = y1;
+		sink.n1 = x0;		sink.n2 = y0;
+		source.n1 = x1;		source.n2 = y1;
 	}
 };
 
@@ -531,8 +533,8 @@ typedef struct n_objects
 
 		n_removed = 0;
 
-		sink.x   = sink.y   = 0;
-		source.x = source.y = 0;
+		sink.n1   = sink.n2   = 0;
+		source.n1 = source.n2 = 0;
 	}
 
 	void update()
@@ -639,32 +641,32 @@ typedef struct n_objects
 
 	interaction_bound get_bound_SI()
 	{
-		sink.x   = 0, sink.y   = get_n_SI();
-		source.x = 0, source.y = get_n_massive();
+		sink.n1   = 0, sink.n2   = get_n_SI();
+		source.n1 = 0, source.n2 = get_n_massive();
 
 		return interaction_bound(sink, source);
 	}
 
 	interaction_bound get_bound_NSI()
 	{
-		sink.x   = get_n_SI(), sink.y   = sink.x + get_n_NSI();
-		source.x = 0,		   source.y = get_n_SI();
+		sink.n1   = get_n_SI(), sink.n1   = sink.n1 + get_n_NSI();
+		source.n1 = 0,		   source.n2 = get_n_SI();
 
 		return interaction_bound(sink, source);
 	}
 
 	interaction_bound get_bound_NI()
 	{
-		sink.x   = get_n_massive(), sink.y   = sink.x + get_n_NI();
-		source.x = 0,   	        source.y = get_n_massive();
+		sink.n1   = get_n_massive(), sink.n2   = sink.n1 + get_n_NI();
+		source.n1 = 0,   	        source.n2 = get_n_massive();
 
 		return interaction_bound(sink, source);
 	}
 
 	interaction_bound get_bound_GD()
 	{
-		sink.x   = get_n_SI(), sink.y   = sink.x + get_n_NSI();
-		source.x = 0,		   source.y = 0;
+		sink.n1   = get_n_SI(), sink.n2   = sink.n1 + get_n_NSI();
+		source.n1 = 0,		   source.n2 = 0;
 
 		return interaction_bound(sink, source);
 	}
