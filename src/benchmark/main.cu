@@ -440,20 +440,20 @@ void cpu_calc_grav_accel(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* 
             for (uint32_t j = 0; j < n_obj; j++)
             {
                 if (i == j) continue;
-                kernel::body_body_grav_accel(r[j], r[i], p[j].mass, a[i]);
-                //r_ij.x = r[j].x - r[i].x;
-                //r_ij.y = r[j].y - r[i].y;
-                //r_ij.z = r[j].z - r[i].z;
+                //kernel::body_body_grav_accel(r[j], r[i], p[j].mass, a[i]);
+                r_ij.x = r[j].x - r[i].x;
+                r_ij.y = r[j].y - r[i].y;
+                r_ij.z = r[j].z - r[i].z;
 
-                //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-                //var_t d = sqrt(d2);
-                //var_t d_3 = 1.0 / (d*d2);
-                ////var_t d_3 = K2 / (d*d2);
+                var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+                var_t d = sqrt(d2);
+                var_t d_3 = 1.0 / (d*d2);
+                //var_t d_3 = K2 / (d*d2);
 
-                //var_t s = p[j].mass * d_3;
-                //a[i].x += s * r_ij.x;
-                //a[i].y += s * r_ij.y;
-                //a[i].z += s * r_ij.z;
+                var_t s = p[j].mass * d_3;
+                a[i].x += s * r_ij.x;
+                a[i].y += s * r_ij.y;
+                a[i].z += s * r_ij.z;
             }
             a[i].x *= K2;
             a[i].y *= K2;
@@ -805,7 +805,11 @@ int main(int argc, const char** argv, const char** env)
     ofstream* output[BENCHMARK_OUTPUT_NAME_N];
     memset(output, 0x0, sizeof(output));
 
+#ifdef _WIN32
     chrono::time_point<chrono::system_clock> start = chrono::system_clock::now();
+#else
+    uint64 start = GetTimeMs64();
+#endif
     try
     {
         create_default_option(opt);
@@ -832,9 +836,15 @@ int main(int argc, const char** argv, const char** env)
     {
         cerr << "ERROR: " << msg << endl;
     }
+#ifdef _WIN32
     chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
     chrono::duration<var_t> total_time = end - start;
     cout << "Total time: " << total_time.count() << " s." << endl;
+#else
+    uint64 end = GetTimeMs64();
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1000.0f;
+    cout << "Total time: " << Dt_CPU << " s." << endl;
+#endif
 
     return (EXIT_SUCCESS);
 }
