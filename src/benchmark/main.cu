@@ -842,7 +842,7 @@ int main(int argc, const char** argv, const char** env)
     cout << "Total time: " << total_time.count() << " s." << endl;
 #else
     uint64 end = GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1000.0f;
+    var_t Dt_CPU = ((var_t)(end - start)) / 1000.0f;
     cout << "Total time: " << Dt_CPU << " s." << endl;
 #endif
 
