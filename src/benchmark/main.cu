@@ -1,11 +1,11 @@
 #include <algorithm>
 #include <ctime>
-#include <chrono>
 #include <iostream>
 #include <iomanip>      // std::setw
 #include <fstream>
 
 #ifdef _WIN32
+#include <chrono>
 #include <Windows.h>
 #else
 #include <sys/time.h>
@@ -87,7 +87,7 @@ void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& 
 
   /*
   *  -- Returns the amount of milliseconds elapsed since the UNIX epoch. Works on both --
-  * Returns the amount of microseconds elapsed since the UNIX epoch. Works on both
+  * Returns the amount of milliseconds elapsed since the UNIX epoch. Works on both
   * windows and linux.
   */
 uint64 GetTimeMs64()
@@ -106,7 +106,7 @@ uint64 GetTimeMs64()
     uint64 ret = li.QuadPart;
     ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
                                  //ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
-    ret /= 10; /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
+    ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
 
     return ret;
 #else
@@ -117,12 +117,10 @@ uint64 GetTimeMs64()
 
     uint64 ret = tv.tv_usec;
     /* Convert from micro seconds (10^-6) to milliseconds (10^-3) */
-    //ret /= 1000;
+    ret /= 1000;
 
     /* Adds the seconds (10^0) after converting them to milliseconds (10^-3) */
-    //ret += (tv.tv_sec * 1000);
-    /* Adds the seconds (10^0) after converting them to microseconds (10^-6) */
-    ret += (tv.tv_sec * 1000000);
+    ret += (tv.tv_sec * 1000);
 
     return ret;
 #endif
@@ -510,63 +508,72 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
 
     var_t Dt_GPU = 0.0;
     //Naive method
-    chrono::time_point<chrono::system_clock> t0, t1;
+#ifdef _WIN32
+    chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
+#else
+    uint64 t0 = GetTimeMs64();
+#endif
     if (100 >= n_obj)
     {
-        t0 = chrono::system_clock::now();
         for (i = 0; i < 100; i++)
         {
             cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, false);
         }
-        t1 = chrono::system_clock::now();
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
-        t0 = chrono::system_clock::now();
         for (i = 0; i < 10; i++)
         {
             cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, false);
         }
-        t1 = chrono::system_clock::now();
     }
     else
     {
-        t0 = chrono::system_clock::now();
         cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, false);
-        t1 = chrono::system_clock::now();
     }
+#ifdef _WIN32
+    chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
     chrono::duration<var_t> total_time = t1 - t0;
     var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+#else
+    uint64 t1 = GetTimeMs64();
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1000.0f;
+#endif
 
     print(PROC_UNIT_CPU, method_name[0], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, false);
 
     //Naive symmetric method
+#ifdef _WIN32
+    t0 = chrono::system_clock::now();
+#else
+    t0 = GetTimeMs64();
+#endif
     if (100 >= n_obj)
     {
-        t0 = chrono::system_clock::now();
         for (i = 0; i < 100; i++)
         {
             cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, true);
         }
-        t1 = chrono::system_clock::now();
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
-        t0 = chrono::system_clock::now();
         for (i = 0; i < 10; i++)
         {
             cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, true);
         }
-        t1 = chrono::system_clock::now();
     }
     else
     {
-        t0 = chrono::system_clock::now();
         cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, true);
-        t1 = chrono::system_clock::now();
     }
+#ifdef _WIN32
+    t1 = chrono::system_clock::now();
     total_time = t1 - t0;
-    Dt_CPU = total_time.count()/(var_t)(i == 0 ? 1 : i);
+    Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+#else
+    t1 = GetTimeMs64();
+    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1000.0f;
+#endif
 
     print(PROC_UNIT_CPU, method_name[1], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, false);
 }
