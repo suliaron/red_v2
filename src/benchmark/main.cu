@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <ctime>
 #include <iostream>
-#include <iomanip>      // std::setw
+#include <iomanip>
 #include <fstream>
 
 #ifdef _WIN32
@@ -23,7 +23,7 @@
 using namespace std;
 using namespace redutil2;
 
-/* Remove if already defined */
+// Remove if already defined
 typedef long long int64;
 typedef unsigned long long uint64;
 
@@ -60,7 +60,7 @@ typedef struct option
 static string method_name[] = { "naive", "naive_sym", "tile", "tile_advanced" };
 static string param_name[] = { "n_body", "interaction_bound" };
 
-void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_a, ofstream& o_result);
+void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result);
 
 namespace kernel
 {
@@ -86,46 +86,43 @@ void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& 
 } /* namespace kernel */
 
   /*
-  *  -- Returns the amount of milliseconds elapsed since the UNIX epoch. Works on both --
-  * Returns the amount of milliseconds elapsed since the UNIX epoch. Works on both
-  * windows and linux.
+  * Returns the amount of microseconds elapsed since the UNIX epoch.
+  * Works on windows and linux.
   */
 uint64 GetTimeMs64()
 {
 #ifdef _WIN32
-    /* Windows */
     FILETIME ft;
     LARGE_INTEGER li;
 
-    /* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC) and copy it
-    * to a LARGE_INTEGER structure. */
+/* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC) 
+ * and copy it to a LARGE_INTEGER structure.
+ */
     GetSystemTimeAsFileTime(&ft);
     li.LowPart = ft.dwLowDateTime;
     li.HighPart = ft.dwHighDateTime;
 
     uint64 ret = li.QuadPart;
-    ret -= 116444736000000000LL; /* Convert from file time to UNIX epoch time. */
-                                 //ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
-    ret /= 10000; /* From 100 nano seconds (10^-7) to 1 millisecond (10^-3) intervals */
+    /* Convert from file time to UNIX epoch time. */
+    ret -= 116444736000000000LL;
+    ret /= 10;      /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
 
     return ret;
 #else
-    /* Linux */
+    // Linux
     struct timeval tv;
 
     gettimeofday(&tv, NULL);
-
     uint64 ret = tv.tv_usec;
     /* Convert from micro seconds (10^-6) to milliseconds (10^-3) */
-    ret /= 1000;
+    //ret /= 1000;
 
-    /* Adds the seconds (10^0) after converting them to milliseconds (10^-3) */
-    ret += (tv.tv_sec * 1000);
+    /* Adds the seconds (10^0) after converting them to microseconds (10^-6) */
+    ret += (tv.tv_sec * 1000000);
 
     return ret;
 #endif
 }
-
 
 inline
 void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& ai)
@@ -215,7 +212,7 @@ void open_stream(string& o_dir, string& filename, ofstream** output, benchmark_o
 
 void print(proc_unit_t proc_unit, string& method_name, string& param_name, interaction_bound int_bound, int n_body, int n_tpb, var_t Dt_CPU, var_t Dt_GPU, ofstream& sout, bool prn_to_scr)
 {
-    static const char* computing_device_name[] =
+    static const char*proc_unit_name[] =
     {
         "CPU",
         "GPU"
@@ -225,7 +222,7 @@ void print(proc_unit_t proc_unit, string& method_name, string& param_name, inter
     if (prn_to_scr)
     {
         cout << tools::get_time_stamp() << sep
-            << setw(4) << computing_device_name[proc_unit] << sep
+            << setw(4) << proc_unit_name[proc_unit] << sep
             << setw(20) << method_name << sep
             << setw(20) << param_name << sep
             << setw(6) << int_bound.sink.n2 - int_bound.sink.n1 << sep
@@ -237,7 +234,7 @@ void print(proc_unit_t proc_unit, string& method_name, string& param_name, inter
     }
 
     sout << tools::get_time_stamp() << SEP
-        << setw(4) << computing_device_name[proc_unit] << SEP
+        << setw(4) << proc_unit_name[proc_unit] << SEP
         << setw(20) << method_name << SEP
         << setw(20) << param_name << SEP
         << setw(6) << int_bound.sink.n2 - int_bound.sink.n1 << SEP
@@ -248,14 +245,14 @@ void print(proc_unit_t proc_unit, string& method_name, string& param_name, inter
         << scientific << setprecision(4) << setw(12) << Dt_GPU << endl;
 }
 
-void allocate_host_storage(uint32_t n_obj, var_t** h_y, var_t** h_a, var_t** h_p, nbp_t::metadata_t** h_md)
+void allocate_host_storage(uint32_t n_obj, var_t** h_y, var_t** h_dy, var_t** h_p, nbp_t::metadata_t** h_md)
 {
     const uint16_t n_ppo = sizeof(nbp_t::param_t) / sizeof(var_t);
     const uint32_t n_var = n_obj * NVPO;
     const uint32_t n_par = n_obj * n_ppo;
 
     ALLOCATE_HOST_VECTOR((void**)(h_y), n_var * sizeof(var_t));
-    ALLOCATE_HOST_VECTOR((void**)(h_a), n_var * sizeof(var_t));
+    ALLOCATE_HOST_VECTOR((void**)(h_dy), n_var * sizeof(var_t));
     ALLOCATE_HOST_VECTOR((void**)(h_p), n_par * sizeof(var_t));
     ALLOCATE_HOST_VECTOR((void**)(h_md), n_obj * sizeof(nbp_t::metadata_t));
 }
@@ -272,10 +269,10 @@ void allocate_device_storage(uint32_t n_obj, var_t** d_y, var_t** d_a, var_t** d
     ALLOCATE_HOST_VECTOR((void**)(d_md), n_obj * sizeof(nbp_t::metadata_t));
 }
 
-void deallocate_host_storage(var_t** h_y, var_t** h_a, var_t** h_p, nbp_t::metadata_t** h_md)
+void deallocate_host_storage(var_t** h_y, var_t** h_dy, var_t** h_p, nbp_t::metadata_t** h_md)
 {
     FREE_HOST_VECTOR((void **)(h_y));
-    FREE_HOST_VECTOR((void **)(h_a));
+    FREE_HOST_VECTOR((void **)(h_dy));
     FREE_HOST_VECTOR((void **)(h_p));
     FREE_HOST_VECTOR((void **)(h_md));
 }
@@ -478,18 +475,18 @@ void benchmark(option& opt, ofstream& o_result)
         cout << "CPU Gravity acceleration:" << endl;
 
         var_t* h_y = 0x0;
-        var_t* h_a = 0x0;
+        var_t* h_dy = 0x0;
         var_t* h_p = 0x0;
         nbp_t::metadata_t* h_md = 0x0;
         for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
         {
-            allocate_host_storage(i, &h_y, &h_a, &h_p, &h_md);
+            allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
             populate(seed, i, h_y, h_p, h_md);
 
             printf("i = %6d\n", i);
-            benchmark_CPU(i, h_y, h_p, h_a, o_result);
+            benchmark_CPU(i, h_y, h_p, h_dy, o_result);
 
-            deallocate_host_storage(&h_y, &h_a, &h_p, &h_md);
+            deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
         }
     }
     else
@@ -501,35 +498,35 @@ void benchmark(option& opt, ofstream& o_result)
     cout << "Done" << endl;
 }
 
-void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_a, ofstream& o_result)
+void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result)
 {
     interaction_bound int_bound;
     int i = 0;
 
     var_t Dt_GPU = 0.0;
-    //Naive method
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
 #else
     uint64 t0 = GetTimeMs64();
 #endif
+    //Naive method
     if (100 >= n_obj)
     {
         for (i = 0; i < 100; i++)
         {
-            cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, false);
+            cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, false);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 10; i++)
         {
-            cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, false);
+            cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, false);
         }
     }
     else
     {
-        cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, false);
+        cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, false);
     }
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
@@ -537,34 +534,34 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
 #else
     uint64 t1 = GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1000.0f;
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
-    print(PROC_UNIT_CPU, method_name[0], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, false);
+    print(PROC_UNIT_CPU, method_name[0], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
 
-    //Naive symmetric method
 #ifdef _WIN32
     t0 = chrono::system_clock::now();
 #else
     t0 = GetTimeMs64();
 #endif
+    //Naive symmetric method
     if (100 >= n_obj)
     {
         for (i = 0; i < 100; i++)
         {
-            cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, true);
+            cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, true);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 10; i++)
         {
-            cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, true);
+            cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, true);
         }
     }
     else
     {
-        cpu_calc_grav_accel(n_obj, h_y, h_p, h_a, true);
+        cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, true);
     }
 #ifdef _WIN32
     t1 = chrono::system_clock::now();
@@ -572,10 +569,10 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
 #else
     t1 = GetTimeMs64();
-    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1000.0f;
+    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
-    print(PROC_UNIT_CPU, method_name[1], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, false);
+    print(PROC_UNIT_CPU, method_name[1], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
 }
 
 void compare(option& opt)
