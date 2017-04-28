@@ -60,8 +60,6 @@ typedef struct option
 static string method_name[] = { "naive", "naive_sym", "tile", "tile_advanced" };
 static string param_name[] = { "n_body", "interaction_bound" };
 
-void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result);
-
 namespace kernel
 {
 inline __host__ __device__
@@ -137,7 +135,7 @@ void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& 
     // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
     var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
     var_t d = sqrt(d2);
-    // compute m_j / d^3 []
+    // compute K2 * m_j / d^3 []
     var_t s = K2 * mj / (d2 * d);
 
     ai.x += s * r_ij.x;
@@ -150,12 +148,15 @@ void body_body_grav_accel_sym(const var3_t& ri, const var3_t& rj, var_t mi, var_
 {
     var3_t r_ij = { 0.0, 0.0, 0.0 };
 
+    // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
     r_ij.x = rj.x - ri.x;
     r_ij.y = rj.y - ri.y;
     r_ij.z = rj.z - ri.z;
 
+    // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
     var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
     var_t d = sqrt(d2);
+    // compute K2 / d^3 []
     var_t d_3 = K2 / (d * d2);
 
     var_t s = mj * d_3;
@@ -238,7 +239,7 @@ void print(proc_unit_t proc_unit, string& method_name, string& param_name, inter
         << setw(20) << method_name << SEP
         << setw(20) << param_name << SEP
         << setw(6) << int_bound.sink.n2 - int_bound.sink.n1 << SEP
-        << setw(6) << int_bound.source.n2 - int_bound.source.n2 << SEP
+        << setw(6) << int_bound.source.n2 - int_bound.source.n1 << SEP
         << setw(6) << n_body << SEP
         << setw(5) << n_tpb << SEP
         << scientific << setprecision(4) << setw(12) << Dt_CPU << SEP
@@ -390,10 +391,12 @@ void cpu_calc_grav_accel(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* 
 {
     // Number of space and velocity coordinates
     const uint32_t nv = NDIM * n_obj;
+
     // Create aliases
     const var3_t* r = (var3_t*)h_y;
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
     var3_t* a = (var3_t*)(h_dy + nv);
+
     // Clear the acceleration array: the += op can be used
     memset(a, 0, nv * sizeof(var_t));
 
@@ -402,7 +405,7 @@ void cpu_calc_grav_accel(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* 
         for (uint32_t i = snk.n1; i < snk.n2; i++)
         {
             var3_t r_ij = { 0.0, 0.0, 0.0 };
-            for (uint32_t j = i + 1; j < n_obj; j++)
+            for (uint32_t j = i + 1; j < src.n2; j++)
             {
                 r_ij.x = r[j].x - r[i].x;
                 r_ij.y = r[j].y - r[i].y;
@@ -410,8 +413,7 @@ void cpu_calc_grav_accel(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* 
 
                 var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
                 var_t d = sqrt(d2);
-                var_t d_3 = 1.0 / (d*d2);
-                //var_t d_3 = K2 / (d*d2);
+                var_t d_3 = K2 / (d * d2);
 
                 var_t s = p[j].mass * d_3;
                 a[i].x += s * r_ij.x;
@@ -423,77 +425,30 @@ void cpu_calc_grav_accel(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* 
                 a[j].y -= s * r_ij.y;
                 a[j].z -= s * r_ij.z;
             }
-            a[i].x *= K2;
-            a[i].y *= K2;
-            a[i].z *= K2;
         }
     }
     else
     {
-        for (uint32_t i = 0; i < n_obj; i++)
+        for (uint32_t i = snk.n1; i < snk.n2; i++)
         {
             var3_t r_ij = { 0.0, 0.0, 0.0 };
-            for (uint32_t j = 0; j < n_obj; j++)
+            for (uint32_t j = src.n1; j < src.n2; j++)
             {
                 if (i == j) continue;
-                //kernel::body_body_grav_accel(r[j], r[i], p[j].mass, a[i]);
                 r_ij.x = r[j].x - r[i].x;
                 r_ij.y = r[j].y - r[i].y;
                 r_ij.z = r[j].z - r[i].z;
 
                 var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
                 var_t d = sqrt(d2);
-                var_t d_3 = 1.0 / (d*d2);
-                //var_t d_3 = K2 / (d*d2);
+                var_t s = K2 * p[j].mass / (d * d2);
 
-                var_t s = p[j].mass * d_3;
                 a[i].x += s * r_ij.x;
                 a[i].y += s * r_ij.y;
                 a[i].z += s * r_ij.z;
             }
-            a[i].x *= K2;
-            a[i].y *= K2;
-            a[i].z *= K2;
         }
     }
-}
-
-void benchmark(option& opt, ofstream& o_result)
-{
-    static const string header_str = "date       time     dev  method_name             param_name        n_snk  n_src  n_bdy  n_tpb Dt_CPU[s]     Dt_GPU[ms]";
-
-    uint32_t seed = (uint32_t)time(NULL);
-    cout << "The seed number is " << seed << endl;
-    // The pseudo-random number generator is initialized using the argument passed as seed.
-    // Used by the subsequent rand() function calls
-    o_result << header_str << endl;
-
-    srand(seed);
-    if (PROC_UNIT_CPU == opt.comp_dev.proc_unit)
-    {
-        cout << "CPU Gravity acceleration:" << endl;
-
-        var_t* h_y = 0x0;
-        var_t* h_dy = 0x0;
-        var_t* h_p = 0x0;
-        nbp_t::metadata_t* h_md = 0x0;
-        for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
-        {
-            allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
-            populate(seed, i, h_y, h_p, h_md);
-
-            benchmark_CPU(i, h_y, h_p, h_dy, o_result);
-
-            deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
-        }
-    }
-    else
-    {
-        cout << "GPU Gravity acceleration:" << endl;
-        throw string("GPU benchmark is not yet implemented.\n");
-    }
-
-    cout << "Done" << endl;
 }
 
 void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result)
@@ -549,7 +504,7 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
         {
             cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy, true);
         }
-    }
+        }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 10; i++)
@@ -571,6 +526,126 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
 #endif
 
     print(PROC_UNIT_CPU, method_name[1], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+    }
+
+void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result)
+{
+    interaction_bound int_bound(snk, src);
+    int i = 0;
+
+    var_t Dt_GPU = 0.0;
+#ifdef _WIN32
+    chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
+#else
+    uint64 t0 = GetTimeMs64();
+#endif
+    //Naive method
+    if (100 >= n_obj)
+    {
+        for (i = 0; i < 100; i++)
+        {
+            cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy, false);
+        }
+    }
+    else if (100 < n_obj && 1000 >= n_obj)
+    {
+        for (i = 0; i < 10; i++)
+        {
+            cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy, false);
+        }
+    }
+    else
+    {
+        cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy, false);
+    }
+#ifdef _WIN32
+    chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
+    chrono::duration<var_t> total_time = t1 - t0;
+    var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+#else
+    uint64 t1 = GetTimeMs64();
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
+#endif
+
+    print(PROC_UNIT_CPU, method_name[0], param_name[1], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+
+#ifdef _WIN32
+    t0 = chrono::system_clock::now();
+#else
+    t0 = GetTimeMs64();
+#endif
+    //Naive symmetric method
+    if (100 >= n_obj)
+    {
+        for (i = 0; i < 100; i++)
+        {
+            cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy, true);
+        }
+    }
+    else if (100 < n_obj && 1000 >= n_obj)
+    {
+        for (i = 0; i < 10; i++)
+        {
+            cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy, true);
+        }
+    }
+    else
+    {
+        cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy, true);
+    }
+#ifdef _WIN32
+    t1 = chrono::system_clock::now();
+    total_time = t1 - t0;
+    Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+#else
+    t1 = GetTimeMs64();
+    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
+#endif
+
+    print(PROC_UNIT_CPU, method_name[1], param_name[1], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+}
+
+void benchmark(option& opt, ofstream& o_result)
+{
+    static const string header_str = "date       time     dev  method_name             param_name        n_snk  n_src  n_bdy  n_tpb Dt_CPU[s]     Dt_GPU[ms]";
+
+    uint32_t seed = (uint32_t)time(NULL);
+    cout << "The seed number is " << seed << endl;
+    // The pseudo-random number generator is initialized using the argument passed as seed.
+    // Used by the subsequent rand() function calls
+    o_result << header_str << endl;
+
+    srand(seed);
+    if (PROC_UNIT_CPU == opt.comp_dev.proc_unit)
+    {
+        cout << "CPU Gravity acceleration:" << endl;
+
+        var_t* h_y = 0x0;
+        var_t* h_dy = 0x0;
+        var_t* h_p = 0x0;
+        nbp_t::metadata_t* h_md = 0x0;
+        for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
+        {
+            allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
+            populate(seed, i, h_y, h_p, h_md);
+
+            uint2_t snk;
+            uint2_t src;
+            snk.n1 = 0, snk.n2 = i;
+            src.n1 = 0, src.n2 = i;
+            //benchmark_CPU(i, h_y, h_p, h_dy, o_result);
+            benchmark_CPU(i, snk, src, h_y, h_p, h_dy, o_result);
+
+            deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
+        }
+    }
+    else
+    {
+        cout << "GPU Gravity acceleration:" << endl;
+        throw string("GPU benchmark is not yet implemented.\n");
+    }
+
+    cout << "Done" << endl;
 }
 
 void compare(option& opt)
@@ -599,8 +674,15 @@ void compare(option& opt)
 
         populate(seed, n_obj, h_y, h_p, h_md);
 
-        cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy1, false);
-        cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy2, true);
+        uint2_t snk;
+        uint2_t src;
+        snk.n1 = 0, snk.n2 = n_obj;
+        src.n1 = 0, src.n2 = n_obj;
+
+        //cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy1, false);
+        //cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy2, true);
+        cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy1, false);
+        cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy2, true);
 
         // Number of space and velocity coordinates
         const uint32_t nv = NDIM * n_obj;
