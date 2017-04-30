@@ -24,7 +24,17 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cu" />
+    <CudaCompile Include="main.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
+    <CudaCompile Include="util.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cpu_base.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="cpu_base.h" />
+    <ClInclude Include="util.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AA8813B1-7EB2-4F11-80E2-D23D42D529B7}</ProjectGuid>
