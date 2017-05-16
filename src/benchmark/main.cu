@@ -31,9 +31,6 @@ using namespace redutil2;
 // Remove if already defined
 typedef unsigned long long uint64;
 
-static string method_name[] = { "base", "base with sym.", "tile", "tile advanced" };
-static string param_name[] = { "n_body", "snk src" };
-
 namespace kernel
 {
 inline __host__ __device__
@@ -124,178 +121,6 @@ void calc_grav_accel_tile_verbose(uint32_t n_obj, const var3_t* r, const nbp_t::
 }
 } /* namespace kernel */
 
-void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result)
-{
-    // Number of space and velocity coordinates
-    const uint32_t nv = NDIM * n_obj;
-
-    // Create aliases
-    const var3_t* r = (var3_t*)h_y;
-    const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-    var3_t* a = (var3_t*)(h_dy + nv);
-
-    interaction_bound int_bound;
-    var_t t = 0.0;
-    int i = 0;
-
-    var_t Dt_GPU = 0.0;
-#ifdef _WIN32
-    chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
-#else
-    uint64 t0 = GetTimeMs64();
-#endif
-    //Naive method
-    if (100 >= n_obj)
-    {
-        for (i = 0; i < 100; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, false);
-        }
-    }
-    else if (100 < n_obj && 1000 >= n_obj)
-    {
-        for (i = 0; i < 10; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, false);
-        }
-    }
-    else
-    {
-        cpu_calc_grav_accel(t, n_obj, r, p, a, false);
-    }
-#ifdef _WIN32
-    chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
-    chrono::duration<var_t> total_time = t1 - t0;
-    var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
-#else
-    uint64 t1 = GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
-#endif
-
-    print(PROC_UNIT_CPU, method_name[0], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
-
-#ifdef _WIN32
-    t0 = chrono::system_clock::now();
-#else
-    t0 = GetTimeMs64();
-#endif
-    //Naive symmetric method
-    if (100 >= n_obj)
-    {
-        for (i = 0; i < 100; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, true);
-        }
-    }
-    else if (100 < n_obj && 1000 >= n_obj)
-    {
-        for (i = 0; i < 10; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, true);
-        }
-    }
-    else
-    {
-        cpu_calc_grav_accel(t, n_obj, r, p, a, true);
-    }
-#ifdef _WIN32
-    t1 = chrono::system_clock::now();
-    total_time = t1 - t0;
-    Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
-#else
-    t1 = GetTimeMs64();
-    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
-#endif
-
-    print(PROC_UNIT_CPU, method_name[1], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
-}
-
-void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result)
-{
-    // Number of space and velocity coordinates
-    const uint32_t nv = NDIM * n_obj;
-
-    // Create aliases
-    const var3_t* r = (var3_t*)h_y;
-    const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-    var3_t* a = (var3_t*)(h_dy + nv);
-
-    interaction_bound int_bound(snk, src);
-    var_t t = 0.0;
-    int i = 0;
-
-    var_t Dt_GPU = 0.0;
-#ifdef _WIN32
-    chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
-#else
-    uint64 t0 = GetTimeMs64();
-#endif
-    //Naive method
-    if (100 >= n_obj)
-    {
-        for (i = 0; i < 100; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
-        }
-    }
-    else if (100 < n_obj && 1000 >= n_obj)
-    {
-        for (i = 0; i < 10; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
-        }
-    }
-    else
-    {
-        cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
-}
-#ifdef _WIN32
-    chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
-    chrono::duration<var_t> total_time = t1 - t0;
-    var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
-#else
-    uint64 t1 = GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
-#endif
-
-    print(PROC_UNIT_CPU, method_name[0], param_name[1], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
-
-#ifdef _WIN32
-    t0 = chrono::system_clock::now();
-#else
-    t0 = GetTimeMs64();
-#endif
-    //Naive symmetric method
-    if (100 >= n_obj)
-    {
-        for (i = 0; i < 100; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
-        }
-    }
-    else if (100 < n_obj && 1000 >= n_obj)
-    {
-        for (i = 0; i < 10; i++)
-        {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
-        }
-    }
-    else
-    {
-        cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
-    }
-#ifdef _WIN32
-    t1 = chrono::system_clock::now();
-    total_time = t1 - t0;
-    Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
-#else
-    t1 = GetTimeMs64();
-    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
-#endif
-
-    print(PROC_UNIT_CPU, method_name[1], param_name[1], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
-}
-
 float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
 {
     static bool first_call = true;
@@ -338,8 +163,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
             CUDA_SAFE_CALL(cudaEventSynchronize(stop));
 
             float elapsed_time = 0.0f;
-            // Computes the elapsed time between two events
-            // (in milliseconds with a resolution of around 0.5 microseconds).
+            // Computes the elapsed time between two events in milliseconds with a resolution of around 0.5 microseconds.
             CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, start, stop));
 
             printf("    %4d %12.4e\n", n_tpb, elapsed_time);
@@ -366,8 +190,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
         CUDA_SAFE_CALL(cudaEventSynchronize(stop));
 
         float elapsed_time = 0.0f;
-        // Computes the elapsed time between two events
-        // (in milliseconds with a resolution of around 0.5 microseconds).
+        // Computes the elapsed time between two events in milliseconds with a resolution of around 0.5 microseconds.
         CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, start, stop));
 
         result.x = opt_n_tpb;
@@ -380,6 +203,9 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
 
 void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_p, var_t* d_dy, ofstream& o_result)
 {
+    static string method_name[] = { "base", "base with sym.", "tile", "tile advanced" };
+    static string param_name[] = { "n_body", "snk src" };
+
     interaction_bound int_bound;
     var_t Dt_CPU = 0.0;
 
@@ -395,7 +221,7 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
 
 void benchmark(option& opt, ofstream& o_result)
 {
-    static const string header_str = "date       time     dev  method_name             param_name        n_snk  n_src  n_bdy  n_tpb Dt_CPU[s]     Dt_GPU[ms]";
+    static const string header_str = "date       time     dev  method_name             param_name        n_snk  n_src  n_body n_tpb Dt_CPU[s]     Dt_GPU[ms]";
 
     var_t* h_y = 0x0;
     var_t* h_dy = 0x0;
@@ -417,11 +243,12 @@ void benchmark(option& opt, ofstream& o_result)
             allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
             populate(seed, i, h_y, h_p, h_md);
 
+            benchmark_CPU(i, h_y, h_p, h_dy, o_result);
+
             uint2_t snk;
             uint2_t src;
             snk.n1 = 0, snk.n2 = i;
             src.n1 = 0, src.n2 = i;
-            //benchmark_CPU(i, h_y, h_p, h_dy, o_result);
             benchmark_CPU(i, snk, src, h_y, h_p, h_dy, o_result);
 
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
@@ -465,25 +292,6 @@ void benchmark(option& opt, ofstream& o_result)
     cout << "Done" << endl;
 }
 
-bool compare(uint32_t n, var_t tol, const var3_t* y1, const var3_t* y2)
-{
-    bool result = true;
-
-    for (uint32_t i = 0; i < n; i++)
-    {
-        var_t dx = y1[i].x - y2[i].x;
-        var_t dy = y1[i].y - y2[i].y;
-        var_t dz = y1[i].z - y2[i].z;
-
-        if (tol < fabs(dx) || tol < fabs(dy) || tol < fabs(dz))
-        {
-            printf("Error: i = %6d (%24.16le, %24.16le, %24.16le)\n", i, dx, dy, dz);
-            result = false;
-        }
-    }
-    return result;
-}
-
 void compare(option& opt)
 {
     const uint32_t n_obj = opt.n0;
@@ -525,6 +333,8 @@ void compare(option& opt)
         const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
         var3_t* a1 = (var3_t*)(h_dy1 + nv);
         var3_t* a2 = (var3_t*)(h_dy2 + nv);
+        memset(a1, 0, n_obj * sizeof(var3_t));
+        memset(a2, 0, n_obj * sizeof(var3_t));
 
         //cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy1, false);
         //cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy2, true);
@@ -569,6 +379,7 @@ void compare(option& opt)
             const var3_t* r = (var3_t*)h_y;
             const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
             var3_t* a1 = (var3_t*)(h_dy1 + nv);
+            memset(a1, 0, n_obj * sizeof(var3_t));
 
             cpu_calc_grav_accel(0.0, n_obj, r, p, a1, true);
             //cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy1, false);
@@ -603,153 +414,153 @@ void compare(option& opt)
     cout << "Done" << endl;
 }
 
-int parse_options(int argc, const char **argv, option_t& opt, bool& verbose)
-{
-    int i = 1;
-
-    while (i < argc)
-    {
-        string p = argv[i];
-
-        if (p == "-odir")
-        {
-            i++;
-            opt.o_dir = argv[i];
-        }
-        else if (p == "-bFile")
-        {
-            i++;
-            opt.base_fn = argv[i];
-        }
-        else if (p == "-cpu")
-        {
-            opt.comp_dev.proc_unit = PROC_UNIT_CPU;
-        }
-        else if (p == "-gpu")
-        {
-            opt.comp_dev.proc_unit = PROC_UNIT_GPU;
-        }
-        else if (p == "-devId")
-        {
-            i++;
-            if (!tools::is_number(argv[i]))
-            {
-                throw string("Invalid number at: " + p);
-            }
-            opt.id_dev = atoi(argv[i]);
-        }
-        else if (p == "-tol")
-        {
-            i++;
-            if (!tools::is_number(argv[i]))
-            {
-                throw string("Invalid number at: " + p);
-            }
-            opt.tol = atof(argv[i]);
-            opt.compare = true;
-        }
-        else if (p == "-n0")
-        {
-            i++;
-            if (!tools::is_number(argv[i]))
-            {
-                throw string("Invalid number at: " + p);
-            }
-            opt.n0 = atoi(argv[i]);
-        }
-        else if (p == "-n1")
-        {
-            i++;
-            if (!tools::is_number(argv[i]))
-            {
-                throw string("Invalid number at: " + p);
-            }
-            opt.n1 = atoi(argv[i]);
-        }
-        else if (p == "-dn")
-        {
-            i++;
-            if (!tools::is_number(argv[i]))
-            {
-                throw string("Invalid number at: " + p);
-            }
-            opt.dn = atoi(argv[i]);
-        }
-        else if (p == "-n_iter")
-        {
-            i++;
-            if (!tools::is_number(argv[i]))
-            {
-                throw string("Invalid number at: " + p);
-            }
-            opt.n_iter = atoi(argv[i]);
-        }
-        else if (p == "-v" || p == "--verbose")
-        {
-            verbose = true;
-        }
-        else if (p == "-h")
-        {
-            printf("Usage:\n");
-            printf("\n\t-cpu               : the benchmark will be carry on the CPU\n");
-            printf("\n\t-gpu               : the benchmark will be carry on the GPU\n");
-            printf("\n\t-devId <number>    : the id of the GPU to benchmark\n");
-            printf("\n\t-n0 <number>       : the starting number of SI bodies\n");
-            printf("\n\t-n1 <number>       : the end number of SI bodies\n");
-            printf("\n\t-dn <number>       : at each iteration the number of bodies will be increased by dn\n");
-            printf("\n\t-n_iter <number>   : after n_iter the value of dn will be multiplyed by a factor of 10\n");
-            printf("\n\t-tol <number>      : the comparison will be done with the defined tolarance level (default value is 1.0e-16)\n");
-            printf("\n\t-v                 : the detailed result of the comparison will be printed to the screen (default value is false)\n");
-            printf("\n\t-oDir <filename>   : the output file will be stored in this directory\n");
-            printf("\n\t-bFile <filename>  : the base filename of the output (without extension), it will be extended by CPU and GPU name\n");
-            printf("\n\t-h                 : print this help\n");
-            exit(EXIT_SUCCESS);
-        }
-        else
-        {
-            throw string("Invalid switch on command-line: " + p + ".");
-        }
-        i++;
-    }
-
-    if (opt.compare)
-    {
-        opt.job_name = JOB_NAME_COMPARE;
-    }
-    else
-    {
-        if (PROC_UNIT_CPU == opt.comp_dev.proc_unit)
-        {
-            opt.job_name = JOB_NAME_BENCMARK_CPU;
-        }
-        else if (PROC_UNIT_GPU == opt.comp_dev.proc_unit)
-        {
-            opt.job_name = JOB_NAME_BENCMARK_GPU;
-        }
-        else
-        {
-            throw string("Unknown processing unit.");
-        }
-    }
-
-    return i;
-}
-
-void create_default_option(option_t& opt)
-{
-    opt.base_fn = "";
-    opt.compare = false;
-    opt.comp_dev.id_dev = 0;
-    opt.comp_dev.proc_unit = PROC_UNIT_CPU;
-    opt.dn = 1;
-    opt.id_dev = 0;
-    opt.job_name = JOB_NAME_UNDEFINED;
-    opt.n0 = 0;
-    opt.n1 = 0;
-    opt.n_iter = 10;
-    opt.o_dir = "";
-    opt.tol = 1.0e-16;
-}
+//int parse_options(int argc, const char **argv, option_t& opt, bool& verbose)
+//{
+//    int i = 1;
+//
+//    while (i < argc)
+//    {
+//        string p = argv[i];
+//
+//        if (p == "-odir")
+//        {
+//            i++;
+//            opt.o_dir = argv[i];
+//        }
+//        else if (p == "-bFile")
+//        {
+//            i++;
+//            opt.base_fn = argv[i];
+//        }
+//        else if (p == "-cpu")
+//        {
+//            opt.comp_dev.proc_unit = PROC_UNIT_CPU;
+//        }
+//        else if (p == "-gpu")
+//        {
+//            opt.comp_dev.proc_unit = PROC_UNIT_GPU;
+//        }
+//        else if (p == "-devId")
+//        {
+//            i++;
+//            if (!tools::is_number(argv[i]))
+//            {
+//                throw string("Invalid number at: " + p);
+//            }
+//            opt.id_dev = atoi(argv[i]);
+//        }
+//        else if (p == "-tol")
+//        {
+//            i++;
+//            if (!tools::is_number(argv[i]))
+//            {
+//                throw string("Invalid number at: " + p);
+//            }
+//            opt.tol = atof(argv[i]);
+//            opt.compare = true;
+//        }
+//        else if (p == "-n0")
+//        {
+//            i++;
+//            if (!tools::is_number(argv[i]))
+//            {
+//                throw string("Invalid number at: " + p);
+//            }
+//            opt.n0 = atoi(argv[i]);
+//        }
+//        else if (p == "-n1")
+//        {
+//            i++;
+//            if (!tools::is_number(argv[i]))
+//            {
+//                throw string("Invalid number at: " + p);
+//            }
+//            opt.n1 = atoi(argv[i]);
+//        }
+//        else if (p == "-dn")
+//        {
+//            i++;
+//            if (!tools::is_number(argv[i]))
+//            {
+//                throw string("Invalid number at: " + p);
+//            }
+//            opt.dn = atoi(argv[i]);
+//        }
+//        else if (p == "-n_iter")
+//        {
+//            i++;
+//            if (!tools::is_number(argv[i]))
+//            {
+//                throw string("Invalid number at: " + p);
+//            }
+//            opt.n_iter = atoi(argv[i]);
+//        }
+//        else if (p == "-v" || p == "--verbose")
+//        {
+//            verbose = true;
+//        }
+//        else if (p == "-h")
+//        {
+//            printf("Usage:\n");
+//            printf("\n\t-cpu               : the benchmark will be carry on the CPU\n");
+//            printf("\n\t-gpu               : the benchmark will be carry on the GPU\n");
+//            printf("\n\t-devId <number>    : the id of the GPU to benchmark\n");
+//            printf("\n\t-n0 <number>       : the starting number of SI bodies\n");
+//            printf("\n\t-n1 <number>       : the end number of SI bodies\n");
+//            printf("\n\t-dn <number>       : at each iteration the number of bodies will be increased by dn\n");
+//            printf("\n\t-n_iter <number>   : after n_iter the value of dn will be multiplyed by a factor of 10\n");
+//            printf("\n\t-tol <number>      : the comparison will be done with the defined tolarance level (default value is 1.0e-16)\n");
+//            printf("\n\t-v                 : the detailed result of the comparison will be printed to the screen (default value is false)\n");
+//            printf("\n\t-oDir <filename>   : the output file will be stored in this directory\n");
+//            printf("\n\t-bFile <filename>  : the base filename of the output (without extension), it will be extended by CPU and GPU name\n");
+//            printf("\n\t-h                 : print this help\n");
+//            exit(EXIT_SUCCESS);
+//        }
+//        else
+//        {
+//            throw string("Invalid switch on command-line: " + p + ".");
+//        }
+//        i++;
+//    }
+//
+//    if (opt.compare)
+//    {
+//        opt.job_name = JOB_NAME_COMPARE;
+//    }
+//    else
+//    {
+//        if (PROC_UNIT_CPU == opt.comp_dev.proc_unit)
+//        {
+//            opt.job_name = JOB_NAME_BENCMARK_CPU;
+//        }
+//        else if (PROC_UNIT_GPU == opt.comp_dev.proc_unit)
+//        {
+//            opt.job_name = JOB_NAME_BENCMARK_GPU;
+//        }
+//        else
+//        {
+//            throw string("Unknown processing unit.");
+//        }
+//    }
+//
+//    return i;
+//}
+//
+//void create_default_option(option_t& opt)
+//{
+//    opt.base_fn = "";
+//    opt.compare = false;
+//    opt.comp_dev.id_dev = 0;
+//    opt.comp_dev.proc_unit = PROC_UNIT_CPU;
+//    opt.dn = 1;
+//    opt.id_dev = 0;
+//    opt.job_name = JOB_NAME_UNDEFINED;
+//    opt.n0 = 0;
+//    opt.n1 = 0;
+//    opt.n_iter = 10;
+//    opt.o_dir = "";
+//    opt.tol = 1.0e-16;
+//}
 
 /*
 -n0 10 -n1 100000 -dn 10 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile benchmark

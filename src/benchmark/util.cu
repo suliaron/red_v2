@@ -145,6 +145,7 @@ void allocate_host_storage(uint32_t n_obj, var_t** h_y, var_t** h_dy, var_t** h_
     ALLOCATE_HOST_VECTOR((void**)(h_dy), n_var * sizeof(var_t));
     ALLOCATE_HOST_VECTOR((void**)(h_p), n_par * sizeof(var_t));
     ALLOCATE_HOST_VECTOR((void**)(h_md), n_obj * sizeof(nbp_t::metadata_t));
+
 }
 
 void allocate_device_storage(uint32_t n_obj, var_t** d_y, var_t** d_a, var_t** d_p, nbp_t::metadata_t** d_md)
@@ -208,4 +209,171 @@ void populate(uint32_t seed, uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::meta
         h_md[i].mig_type = MIGRATION_TYPE_NO;
         h_md[i].unused1 = h_md[i].unused2 = h_md[i].unused3 = false;
     }
+}
+
+bool compare(uint32_t n, var_t tol, const var3_t* y1, const var3_t* y2)
+{
+    bool result = true;
+
+    for (uint32_t i = 0; i < n; i++)
+    {
+        var_t dx = y1[i].x - y2[i].x;
+        var_t dy = y1[i].y - y2[i].y;
+        var_t dz = y1[i].z - y2[i].z;
+
+        if (tol < fabs(dx) || tol < fabs(dy) || tol < fabs(dz))
+        {
+            printf("Error: i = %6d (%24.16le, %24.16le, %24.16le)\n", i, dx, dy, dz);
+            result = false;
+        }
+    }
+    return result;
+}
+
+int parse_options(int argc, const char **argv, option_t& opt, bool& verbose)
+{
+    int i = 1;
+
+    while (i < argc)
+    {
+        string p = argv[i];
+
+        if (p == "-odir")
+        {
+            i++;
+            opt.o_dir = argv[i];
+        }
+        else if (p == "-bFile")
+        {
+            i++;
+            opt.base_fn = argv[i];
+        }
+        else if (p == "-cpu")
+        {
+            opt.comp_dev.proc_unit = PROC_UNIT_CPU;
+        }
+        else if (p == "-gpu")
+        {
+            opt.comp_dev.proc_unit = PROC_UNIT_GPU;
+        }
+        else if (p == "-devId")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.id_dev = atoi(argv[i]);
+        }
+        else if (p == "-tol")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.tol = atof(argv[i]);
+            opt.compare = true;
+        }
+        else if (p == "-n0")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.n0 = atoi(argv[i]);
+        }
+        else if (p == "-n1")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.n1 = atoi(argv[i]);
+        }
+        else if (p == "-dn")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.dn = atoi(argv[i]);
+        }
+        else if (p == "-n_iter")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.n_iter = atoi(argv[i]);
+        }
+        else if (p == "-v" || p == "--verbose")
+        {
+            verbose = true;
+        }
+        else if (p == "-h")
+        {
+            printf("Usage:\n");
+            printf("\n\t-cpu               : the benchmark will be carry on the CPU\n");
+            printf("\n\t-gpu               : the benchmark will be carry on the GPU\n");
+            printf("\n\t-devId <number>    : the id of the GPU to benchmark\n");
+            printf("\n\t-n0 <number>       : the starting number of SI bodies\n");
+            printf("\n\t-n1 <number>       : the end number of SI bodies\n");
+            printf("\n\t-dn <number>       : at each iteration the number of bodies will be increased by dn\n");
+            printf("\n\t-n_iter <number>   : after n_iter the value of dn will be multiplyed by a factor of 10\n");
+            printf("\n\t-tol <number>      : the comparison will be done with the defined tolarance level (default value is 1.0e-16)\n");
+            printf("\n\t-v                 : the detailed result of the comparison will be printed to the screen (default value is false)\n");
+            printf("\n\t-oDir <filename>   : the output file will be stored in this directory\n");
+            printf("\n\t-bFile <filename>  : the base filename of the output (without extension), it will be extended by CPU and GPU name\n");
+            printf("\n\t-h                 : print this help\n");
+            exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            throw string("Invalid switch on command-line: " + p + ".");
+        }
+        i++;
+    }
+
+    if (opt.compare)
+    {
+        opt.job_name = JOB_NAME_COMPARE;
+    }
+    else
+    {
+        if (PROC_UNIT_CPU == opt.comp_dev.proc_unit)
+        {
+            opt.job_name = JOB_NAME_BENCMARK_CPU;
+        }
+        else if (PROC_UNIT_GPU == opt.comp_dev.proc_unit)
+        {
+            opt.job_name = JOB_NAME_BENCMARK_GPU;
+        }
+        else
+        {
+            throw string("Unknown processing unit.");
+        }
+    }
+
+    return i;
+}
+
+void create_default_option(option_t& opt)
+{
+    opt.base_fn = "";
+    opt.compare = false;
+    opt.comp_dev.id_dev = 0;
+    opt.comp_dev.proc_unit = PROC_UNIT_CPU;
+    opt.dn = 1;
+    opt.id_dev = 0;
+    opt.job_name = JOB_NAME_UNDEFINED;
+    opt.n0 = 0;
+    opt.n1 = 0;
+    opt.n_iter = 10;
+    opt.o_dir = "";
+    opt.tol = 1.0e-16;
 }
