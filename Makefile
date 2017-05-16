@@ -3,7 +3,7 @@
 # http://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/#axzz3ODhDRl4y
 # http://owen.sj.ca.us/~rk/howto/slides/make/slides/makerecurs.html
 
-
+CUDA_PATH := /usr/local/cuda
 NVCC_PATH := /usr/local/cuda/bin
 # NVCC Compiler
 NVCC := $(NVCC_PATH)/nvcc
@@ -23,7 +23,7 @@ RED_INITIAL     := $(SRC)/red_v2_initial
 RED_UTILITY     := $(SRC)/red_v2_utility
 RED_BENCHMARK   := $(SRC)/benchmark
 
-INCLUDES        := -Ibase_type -I$(RED_UTILITY) -I$(RED_INITIAL)
+INCLUDES        := -Ibase_type -I$(RED_UTILITY) -I$(RED_INITIAL) -I$(CUDA_PATH)/include
 
 RED_LIBRARY     := red.library
 BIN             := bin

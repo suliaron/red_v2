@@ -1,6 +1,6 @@
-#include "thrust\device_ptr.h"
-#include "thrust\fill.h"
-#include "thrust\extrema.h"
+#include "thrust/device_ptr.h"
+#include "thrust/fill.h"
+#include "thrust/extrema.h"
 
 #include "integrator.h"
 #include "ode.h"
