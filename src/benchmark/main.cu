@@ -28,9 +28,6 @@
 using namespace std;
 using namespace redutil2;
 
-// Remove if already defined
-typedef unsigned long long uint64;
-
 namespace kernel
 {
 inline __host__ __device__
@@ -580,7 +577,7 @@ int main(int argc, const char** argv, const char** env)
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> start = chrono::system_clock::now();
 #else
-    uint64 start = GetTimeMs64();
+    uint64_t start = GetTimeMs64();
 #endif
     try
     {
@@ -611,7 +608,7 @@ int main(int argc, const char** argv, const char** env)
     chrono::duration<var_t> total_time = end - start;
     cout << "Total time: " << total_time.count() << " s." << endl;
 #else
-    uint64 end = GetTimeMs64();
+    uint64_t end = GetTimeMs64();
     var_t Dt_CPU = ((var_t)(end - start)) / 1.0e6;
     cout << "Total time: " << Dt_CPU << " s." << endl;
 #endif

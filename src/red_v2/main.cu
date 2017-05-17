@@ -1,5 +1,8 @@
 #include <ctime>
+#ifdef _WIN32
 #include <chrono>
+#include <Windows.h>
+#endif
 #include <iostream>
 #include <iomanip>      // std::setw
 #include <fstream>
@@ -158,6 +161,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t0, t1;
 #else
+    uint64_t t0 = 0ULL, t1 = 0ULL;
 #endif
 	time_t time_last_info = clock();
 	time_t time_last_dump = clock();
@@ -190,11 +194,22 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
         //}
 
 		// make the integration step, and measure the time it takes
+
+#ifdef _WIN32
         t0 = chrono::system_clock::now();
+#else
+        uint64_t t0 = GetTimeMs64();
+#endif
 		f->dt = intgr->step();
+#ifdef _WIN32
         t1 = chrono::system_clock::now();
-        chrono::duration<var_t> dt = t1 - t0;
+        chrono::duration<var_t> dt = t1 - t0; // [sec]
         f->t_wc += dt.count();
+#else
+        uint64_t t1 = GetTimeMs64();
+        var_t Dt_CPU = (var_t)(t1 - t0) / 1.0e6;  // [sec]
+        f->t_wc += Dt_CPU;
+#endif
         dt_ls += fabs(f->dt);
 
 		if (opt->param->output_interval <= fabs(dt_ls))
@@ -255,7 +270,11 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 int main(int argc, const char** argv, const char** env)
 {
+#ifdef _WIN32
     chrono::time_point<chrono::system_clock> start = chrono::system_clock::now();
+#else
+    uint64_t start = GetTimeMs64();
+#endif
 	ofstream* slog = NULL;
 
 	try
@@ -295,14 +314,21 @@ int main(int argc, const char** argv, const char** env)
 		}
 		cerr << "ERROR: " << msg << endl;
 	}
+    var_t total_time = 0.0;
+#ifdef _WIN32
     chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
-    chrono::duration<var_t> total_time = end - start;
+    chrono::duration<var_t> tt = end - start;
+    total_time = tt.count();  // [sec]
+#else
+    uint64_t end = GetTimeMs64();
+    var_t total_time = (var_t)(end - start) / 1.0e6;  // [sec]
+#endif
 
 	if (NULL != slog)
 	{
-		file::log_message(*slog, "Total time: " + tools::convert_var_t(total_time.count()) + " s.", false);
+		file::log_message(*slog, "Total time: " + tools::convert_var_t(total_time) + " s.", false);
 	}
-	cout << "Total time: " << total_time.count() << " s." << endl;
+	cout << "Total time: " << tools::convert_var_t(total_time) << " s." << endl;
 
 	return (EXIT_SUCCESS);
 }

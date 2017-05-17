@@ -2,12 +2,9 @@
 
 #include "type.h"
 
-// Remove if already defined
-typedef unsigned long long uint64;
-
 namespace redutil2
 {
-    uint64 GetTimeMs64();
+    uint64_t GetTimeMs64();
 
     __host__ __device__ var4_t rotate_2D_vector(var_t theta, const var4_t& r);
 

@@ -192,7 +192,7 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
 #else
-    uint64 t0 = GetTimeMs64();
+    uint64_t t0 = GetTimeMs64();
 #endif
     // Base method
     memset(a, 0, n_obj * sizeof(var3_t));
@@ -226,7 +226,7 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     chrono::duration<var_t> total_time = t1 - t0;
     var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
 #else
-    uint64 t1 = GetTimeMs64();
+    uint64_t t1 = GetTimeMs64();
     var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
@@ -297,7 +297,7 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
 #else
-    uint64 t0 = GetTimeMs64();
+    uint64_t t0 = GetTimeMs64();
 #endif
     // Base method
     memset(a, 0, n_obj * sizeof(var3_t));
@@ -331,7 +331,7 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     chrono::duration<var_t> total_time = t1 - t0;
     var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
 #else
-    uint64 t1 = GetTimeMs64();
+    uint64_t t1 = GetTimeMs64();
     var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 

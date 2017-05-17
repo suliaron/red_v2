@@ -10,7 +10,7 @@
 using namespace std;
 using namespace redutil2;
 
-#if 0
+#if 1
 int main()
 {
     printf("sizeof(unsigned short int) = %d\n", sizeof(unsigned short int));
@@ -114,40 +114,3 @@ int main()
     return 0;
 }
 #endif
-
-#if 1
-#include <stdio.h>
-#include <time.h>
-#include <sys/time.h>
-
-int main()
-{
-    time_t start = time(NULL);
-    int same = 0;
-    int different = 0;
-    int max_usec = 0;
-    while (1) {
-    time_t t;
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    t = time(NULL);
-    if (t < tv.tv_sec) {
-    different++;
-    if (tv.tv_usec > max_usec) {
-    max_usec = tv.tv_usec;
-    }
-    }
-    else {
-    same++;
-    }
-    if (t > start + 5) {
-    break;
-    }
-    }
-    printf("Same:      %i\n", same);
-    printf("Different: %i\n", different);
-    printf("Largest difference seen at %i\n", max_usec);
-}
-
-#endif
-

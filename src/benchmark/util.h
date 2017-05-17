@@ -35,11 +35,6 @@ typedef struct option
     job_name_t job_name;
 } option_t;
 
-// Remove if already defined
-//typedef unsigned long long uint64;
-//
-//uint64 GetTimeMs64();
-
 void create_filename(option_t& opt, std::string& filename);
 void open_stream(std::string& o_dir, std::string& filename, std::ofstream** output, benchmark_output_name_t name);
 void print(proc_unit_t proc_unit, std::string& method_name, std::string& param_name, interaction_bound int_bound, int n_body, int n_tpb, var_t Dt_CPU, var_t Dt_GPU, std::ofstream& sout, bool prn_to_scr);

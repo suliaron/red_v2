@@ -133,7 +133,7 @@ namespace redutil2
 * Returns the amount of microseconds elapsed since the UNIX epoch.
 * Works on windows and linux.
 */
-uint64 GetTimeMs64()
+uint64_t GetTimeMs64()
 {
 #ifdef _WIN32
     FILETIME ft;
@@ -146,7 +146,7 @@ uint64 GetTimeMs64()
     li.LowPart = ft.dwLowDateTime;
     li.HighPart = ft.dwHighDateTime;
 
-    uint64 ret = li.QuadPart;
+    uint64_t ret = li.QuadPart;
     /* Convert from file time to UNIX epoch time. */
     ret -= 116444736000000000LL;
     ret /= 10;      /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
@@ -157,7 +157,7 @@ uint64 GetTimeMs64()
     struct timeval tv;
 
     gettimeofday(&tv, NULL);
-    uint64 ret = tv.tv_usec;
+    uint64_t ret = tv.tv_usec;
     /* Convert from micro seconds (10^-6) to milliseconds (10^-3) */
     //ret /= 1000;
 
