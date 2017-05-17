@@ -53,7 +53,7 @@ threebody.o
 RED_INITIAL_OBJS := \
 distribution.o \
 main.o \
-util_init.o \
+util_init.o
 
 RED_UTILITY_OBJS := \
 file_util.o \
