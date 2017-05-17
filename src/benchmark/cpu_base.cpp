@@ -1,3 +1,4 @@
+#include <cstring>
 #ifdef _WIN32
 #include <chrono>
 #include <Windows.h>
