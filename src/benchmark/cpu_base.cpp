@@ -1,10 +1,8 @@
 #ifdef _WIN32
 #include <chrono>
 #include <Windows.h>
-#else
-#include <sys/time.h>
-#include <ctime>
 #endif
+#include <math.h>
 
 #include "macro.h"
 #include "type.h"
