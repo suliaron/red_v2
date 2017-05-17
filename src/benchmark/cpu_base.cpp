@@ -8,6 +8,7 @@
 #include "macro.h"
 #include "type.h"
 #include "util.h"
+#include "redutil2.h"
 
 #define NDIM   3        // Number of space dimension
 #define NVPO   6        // Number of variables per object (3 space and 3 velocity coordinates)
