@@ -93,11 +93,11 @@ $(RED)/red_v2 : $(addprefix $(RED)/, $(RED_OBJS)) | $(BIN)
 	cp $@ $(BIN)/
 	
 $(RED_INITIAL)/red_v2_init : $(addprefix $(RED_INITIAL)/, $(RED_INITIAL_OBJS)) | $(BIN)
-	$(LINK) $(RED_LIBRARY)/redutil.a -o $@ $?
+	$(LINK) $(RED_LIBRARY)/redutil2.a -o $@ $?
 	cp $@ $(BIN)/
 
 $(RED_BENCHMARK)/red_v2_benchmark : $(addprefix $(RED_BENCHMARK)/, $(RED_BENCHMARK_OBJS)) | $(BIN)
-	$(LINK) $(RED_LIBRARY)/redutil.a -o $@ $?
+	$(LINK) $(RED_LIBRARY)/redutil2.a -o $@ $?
 	cp $@ $(BIN)/
 	
 $(RED_UTILITY)/redutil2.a : $(addprefix $(RED_UTILITY)/, $(RED_UTILITY_OBJS)) | $(RED_LIBRARY)
