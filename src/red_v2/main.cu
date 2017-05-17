@@ -155,9 +155,10 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	static string path_integral_event = file::combine_path(outdir, opt->fn_prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL_EVENT] + ".txt");
 
 	var_t dt_ls = 0.0;  //! The elapsed time since the last data save 
-
+#ifdef _WIN32
     chrono::time_point<chrono::system_clock> t0, t1;
-
+#else
+#endif
 	time_t time_last_info = clock();
 	time_t time_last_dump = clock();
 
