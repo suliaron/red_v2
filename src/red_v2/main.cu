@@ -158,10 +158,11 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	static string path_integral_event = file::combine_path(outdir, opt->fn_prefix + opt->out_fn[OUTPUT_NAME_INTEGRAL_EVENT] + ".txt");
 
 	var_t dt_ls = 0.0;  //! The elapsed time since the last data save 
+    var_t Dt_CPU = 0.0; //! The time interval for one integration step [sec]
 #ifdef _WIN32
-    chrono::time_point<chrono::system_clock> t0, t1;
+    chrono::time_point<chrono::system_clock> t0;
 #else
-    uint64_t t0 = 0ULL, t1 = 0ULL;
+    uint64_t t0 = 0ULL;
 #endif
 	time_t time_last_info = clock();
 	time_t time_last_dump = clock();
@@ -194,7 +195,6 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
         //}
 
 		// make the integration step, and measure the time it takes
-
 #ifdef _WIN32
         t0 = chrono::system_clock::now();
 #else
@@ -202,14 +202,11 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 #endif
 		f->dt = intgr->step();
 #ifdef _WIN32
-        t1 = chrono::system_clock::now();
-        chrono::duration<var_t> dt = t1 - t0; // [sec]
-        f->t_wc += dt.count();
+        Dt_CPU = (chrono::system_clock::now() - t0).count(); // [sec]
 #else
-        uint64_t t1 = GetTimeMs64();
-        var_t Dt_CPU = (var_t)(t1 - t0) / 1.0e6;  // [sec]
-        f->t_wc += Dt_CPU;
+        Dt_CPU = (var_t)(GetTimeMs64() - t0) / 1.0e6;        // [sec]
 #endif
+        f->t_wc += Dt_CPU;
         dt_ls += fabs(f->dt);
 
 		if (opt->param->output_interval <= fabs(dt_ls))
@@ -231,7 +228,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 		if (opt->param->info_dt < (clock() - time_last_info) / (double)CLOCKS_PER_SEC) 
 		{
 			time_last_info = clock();
-			print_info(opt, f, intgr, dt.count(), f->t_wc);
+			print_info(opt, f, intgr, Dt_CPU, f->t_wc);
 		}
 	} /* while : main cycle */
     if (0.0 < fabs(dt_ls))
@@ -314,14 +311,10 @@ int main(int argc, const char** argv, const char** env)
 		}
 		cerr << "ERROR: " << msg << endl;
 	}
-    var_t total_time = 0.0;
 #ifdef _WIN32
-    chrono::time_point<chrono::system_clock> end = chrono::system_clock::now();
-    chrono::duration<var_t> tt = end - start;
-    total_time = tt.count();  // [sec]
+    var_t total_time = (chrono::system_clock::now() - start).count(); // [sec]
 #else
-    uint64_t end = GetTimeMs64();
-    var_t total_time = (var_t)(end - start) / 1.0e6;  // [sec]
+    var_t total_time = (var_t)(GetTimeMs64() - start) / 1.0e6;        // [sec]
 #endif
 
 	if (NULL != slog)
