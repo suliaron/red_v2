@@ -1,3 +1,4 @@
+#include <cfloat>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
