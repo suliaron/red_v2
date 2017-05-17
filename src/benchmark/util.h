@@ -36,9 +36,9 @@ typedef struct option
 } option_t;
 
 // Remove if already defined
-typedef unsigned long long uint64;
-
-uint64 GetTimeMs64();
+//typedef unsigned long long uint64;
+//
+//uint64 GetTimeMs64();
 
 void create_filename(option_t& opt, std::string& filename);
 void open_stream(std::string& o_dir, std::string& filename, std::ofstream** output, benchmark_output_name_t name);

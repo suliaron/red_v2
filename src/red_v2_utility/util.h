@@ -2,9 +2,14 @@
 
 #include "type.h"
 
+// Remove if already defined
+typedef unsigned long long uint64;
+
 namespace redutil2
 {
-	__host__ __device__ var4_t rotate_2D_vector(var_t theta, const var4_t& r);
+    uint64 GetTimeMs64();
+
+    __host__ __device__ var4_t rotate_2D_vector(var_t theta, const var4_t& r);
 
 	template <typename T>
 	std::string number_to_string( T number, uint32_t width, bool fill);

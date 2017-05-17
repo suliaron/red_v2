@@ -3,14 +3,6 @@
 #include <iostream>
 #include <fstream>
 
-#ifdef _WIN32
-#include <chrono>
-#include <Windows.h>
-#else
-#include <sys/time.h>
-#include <ctime>
-#endif
-
 #include "constants.h"
 #include "redutil2.h"
 #include "util.h"
@@ -20,45 +12,6 @@
 
 using namespace std;
 using namespace redutil2;
-
-/*
- * Returns the amount of microseconds elapsed since the UNIX epoch.
- * Works on windows and linux.
- */
-uint64 GetTimeMs64()
-{
-#ifdef _WIN32
-    FILETIME ft;
-    LARGE_INTEGER li;
-
-    /* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC)
-    * and copy it to a LARGE_INTEGER structure.
-    */
-    GetSystemTimeAsFileTime(&ft);
-    li.LowPart = ft.dwLowDateTime;
-    li.HighPart = ft.dwHighDateTime;
-
-    uint64 ret = li.QuadPart;
-    /* Convert from file time to UNIX epoch time. */
-    ret -= 116444736000000000LL;
-    ret /= 10;      /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
-
-    return ret;
-#else
-    // Linux
-    struct timeval tv;
-
-    gettimeofday(&tv, NULL);
-    uint64 ret = tv.tv_usec;
-    /* Convert from micro seconds (10^-6) to milliseconds (10^-3) */
-    //ret /= 1000;
-
-    /* Adds the seconds (10^0) after converting them to microseconds (10^-6) */
-    ret += (tv.tv_sec * 1000000);
-
-    return ret;
-#endif
-}
 
 void create_filename(option_t& opt, string& filename)
 {

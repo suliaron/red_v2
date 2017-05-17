@@ -6,6 +6,14 @@
 #include <sstream>
 #include <string>
 
+#ifdef _WIN32
+#include <chrono>
+#include <Windows.h>
+#else
+#include <sys/time.h>
+#include <ctime>
+#endif
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -121,7 +129,46 @@ void calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t* k1
 
 namespace redutil2
 {
-template <typename T>
+/*
+* Returns the amount of microseconds elapsed since the UNIX epoch.
+* Works on windows and linux.
+*/
+uint64 GetTimeMs64()
+{
+#ifdef _WIN32
+    FILETIME ft;
+    LARGE_INTEGER li;
+
+    /* Get the amount of 100 nano seconds intervals elapsed since January 1, 1601 (UTC)
+    * and copy it to a LARGE_INTEGER structure.
+    */
+    GetSystemTimeAsFileTime(&ft);
+    li.LowPart = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+
+    uint64 ret = li.QuadPart;
+    /* Convert from file time to UNIX epoch time. */
+    ret -= 116444736000000000LL;
+    ret /= 10;      /* From 100 nano seconds (10^-7) to 1 microsecond (10^-6) intervals */
+
+    return ret;
+#else
+    // Linux
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    uint64 ret = tv.tv_usec;
+    /* Convert from micro seconds (10^-6) to milliseconds (10^-3) */
+    //ret /= 1000;
+
+    /* Adds the seconds (10^0) after converting them to microseconds (10^-6) */
+    ret += (tv.tv_sec * 1000000);
+
+    return ret;
+#endif
+}
+
+    template <typename T>
 std::string number_to_string( T number, uint32_t width, bool fill)
 {
 	std::ostringstream ss;
