@@ -159,12 +159,8 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 	var_t dt_ls = 0.0;  //! The elapsed time since the last data save 
     var_t Dt_CPU = 0.0; //! The time interval for one integration step [sec]
-#ifdef _WIN32
-    chrono::time_point<chrono::system_clock> t0;
-#else
-    uint64_t t0 = 0ULL;
-#endif
-	time_t time_last_info = clock();
+
+    time_t time_last_info = clock();
 	time_t time_last_dump = clock();
 
 	uint32_t n_print = 0;
@@ -196,7 +192,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 
 		// make the integration step, and measure the time it takes
 #ifdef _WIN32
-        t0 = chrono::system_clock::now();
+        chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
 #else
         uint64_t t0 = GetTimeMs64();
 #endif
