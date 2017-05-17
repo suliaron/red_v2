@@ -1,8 +1,9 @@
-#include <time.h>       /* time                      */
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <time.h>       /* time                      */
 
 #include "distribution.h"
 #include "initial_type.h"

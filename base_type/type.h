@@ -76,7 +76,6 @@ typedef enum
 {
 	DATA_REPRESENTATION_ASCII,
 	DATA_REPRESENTATION_BINARY,
-	DATA_REPRESENTATION_N,
 } data_rep_t;
 
 typedef enum 
