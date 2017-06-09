@@ -17,6 +17,9 @@
     <CudaCompile Include="util.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="gpu_base.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cpu_base.cpp">
@@ -28,6 +31,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gpu_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
