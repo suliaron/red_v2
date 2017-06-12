@@ -186,8 +186,8 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     static string method_name[] = { "base", "base with sym.", "tile", "tile advanced" };
     static string param_name[] = { "n_body", "snk src" };
 
-    uint2_t snk, src;
-    snk = { 0, 0 }, src = { 0, 0 };
+    uint2_t snk = { 0, 0 };
+    uint2_t src = { 0, 0 };
     var_t Dt_CPU = 0.0;
 
     cudaDeviceProp deviceProp;

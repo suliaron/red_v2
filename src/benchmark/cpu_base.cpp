@@ -176,8 +176,8 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
     var3_t* a = (var3_t*)(h_dy + nv);
 
-    uint2_t snk, src;
-    snk = { 0, 0 }, src = { 0, 0 };
+    uint2_t snk = { 0, 0 };
+    uint2_t src = { 0, 0 };
     var_t t = 0.0;
     int i = 0;
 
