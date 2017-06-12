@@ -255,12 +255,19 @@ int main(int argc, const char** argv, const char** env)
     {
         create_default_option(opt);
         parse_options(argc, argv, opt, verbose);
+        if (0 > opt.id_dev || opt.id_dev >= get_n_cuda_device())
+        {
+            throw string("The requested GPU does not exist.");
+        }
         create_filename(opt, result_filename);
 
         switch (opt.job_name)
         {
         case JOB_NAME_BENCMARK_CPU:
         case JOB_NAME_BENCMARK_GPU:
+           
+            device_query(cout, opt.id_dev, false);
+            set_device(opt.id_dev, cout);
             open_stream(opt.o_dir, result_filename, output, BENCHMARK_OUTPUT_NAME_RESULT);
             benchmark(opt, *output[BENCHMARK_OUTPUT_NAME_RESULT]);
             break;

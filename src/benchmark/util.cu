@@ -209,7 +209,7 @@ int parse_options(int argc, const char **argv, option_t& opt, bool& verbose)
         {
             opt.comp_dev.proc_unit = PROC_UNIT_GPU;
         }
-        else if (p == "-devId")
+        else if (p == "-id_dev")
         {
             i++;
             if (!tools::is_number(argv[i]))
@@ -273,7 +273,7 @@ int parse_options(int argc, const char **argv, option_t& opt, bool& verbose)
             printf("Usage:\n");
             printf("\n\t-cpu               : the benchmark will be carry on the CPU\n");
             printf("\n\t-gpu               : the benchmark will be carry on the GPU\n");
-            printf("\n\t-devId <number>    : the id of the GPU to benchmark\n");
+            printf("\n\t-id_dev <number>    : the id of the GPU to benchmark\n");
             printf("\n\t-n0 <number>       : the starting number of SI bodies\n");
             printf("\n\t-n1 <number>       : the end number of SI bodies\n");
             printf("\n\t-dn <number>       : at each iteration the number of bodies will be increased by dn\n");

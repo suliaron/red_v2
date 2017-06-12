@@ -157,20 +157,20 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
         for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb; n_tpb += 16)
         {            
             float elapsed_time = gpu_calc_grav_accel_naive(n_obj, n_tpb, start, stop, r, p, a);
-            printf("    %4d %12.4e\n", n_tpb, elapsed_time);
+            printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
             if (elapsed_time < result.y)
             {
-                result.x = n_tpb;
+                result.x = (float)n_tpb;
                 result.y = elapsed_time;
             }
         }
-        opt_n_tpb = result.x;
+        opt_n_tpb = (unsigned int)result.x;
         n_last = n_obj;
     }
     else
     {
         float elapsed_time = gpu_calc_grav_accel_naive(n_obj, opt_n_tpb, start, stop, r, p, a);
-        result.x = opt_n_tpb;
+        result.x = (float)opt_n_tpb;
         result.y = elapsed_time;
     }
     first_call = false;
@@ -194,8 +194,8 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     CUDA_SAFE_CALL(cudaGetDeviceProperties(&deviceProp, id_dev));
 
     float2 result = gpu_calc_grav_accel_naive(n_obj, deviceProp.maxThreadsPerBlock, d_y, d_p, d_dy);
-    int n_tpb = result.x;
-    var_t Dt_GPU = result.y / 1.0e3;
+    unsigned int n_tpb = (unsigned int)result.x;
+    var_t Dt_GPU = result.y / 1.0e3; // [sec]
 
     print(PROC_UNIT_GPU, method_name[0], param_name[0], snk, src, n_obj, n_tpb, Dt_CPU, Dt_GPU, o_result, true);
 }
