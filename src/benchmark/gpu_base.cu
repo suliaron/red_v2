@@ -154,7 +154,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
 
     if (first_call || n_last != n_obj)
     {
-        for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb; n_tpb += 16)
+        for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb/2; n_tpb += 16)
         {            
             float elapsed_time = gpu_calc_grav_accel_naive(n_obj, n_tpb, start, stop, r, p, a);
             printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
