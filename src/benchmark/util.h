@@ -37,7 +37,7 @@ typedef struct option
 
 void create_filename(option_t& opt, std::string& filename);
 void open_stream(std::string& o_dir, std::string& filename, std::ofstream** output, benchmark_output_name_t name);
-void print(proc_unit_t proc_unit, std::string& method_name, std::string& param_name, interaction_bound int_bound, int n_body, int n_tpb, var_t Dt_CPU, var_t Dt_GPU, std::ofstream& sout, bool prn_to_scr);
+void print(proc_unit_t proc_unit, std::string& method_name, std::string& param_name, uint2_t snk, uint2_t src, int n_body, int n_tpb, var_t Dt_CPU, var_t Dt_GPU, std::ofstream& sout, bool prn_to_scr);
 
 void allocate_host_storage(uint32_t n_obj, var_t** h_y, var_t** h_dy, var_t** h_p, nbp_t::metadata_t** h_md);
 void allocate_device_storage(uint32_t n_obj, var_t** d_y, var_t** d_a, var_t** d_p, nbp_t::metadata_t** d_md);

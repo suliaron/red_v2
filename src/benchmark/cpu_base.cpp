@@ -18,12 +18,8 @@ using namespace std;
 inline
 void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& ai)
 {
-    var3_t r_ij = { 0.0, 0.0, 0.0 };
-
     // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
-    r_ij.x = rj.x - ri.x;
-    r_ij.y = rj.y - ri.y;
-    r_ij.z = rj.z - ri.z;
+    var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
 
     // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
     var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
@@ -36,14 +32,10 @@ void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& 
 }
 
 inline
-void body_body_grav_accel_sym(const var3_t& ri, const var3_t& rj, var_t mi, var_t mj, var3_t& ai, var3_t& aj)
+void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, var_t mj, var3_t& ai, var3_t& aj)
 {
-    var3_t r_ij = { 0.0, 0.0, 0.0 };
-
     // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
-    r_ij.x = rj.x - ri.x;
-    r_ij.y = rj.y - ri.y;
-    r_ij.z = rj.z - ri.z;
+    var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
 
     // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
     var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
@@ -125,7 +117,7 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, uint2_t snk, uint2_t src, cons
             var3_t r_ij = { 0.0, 0.0, 0.0 };
             for (uint32_t j = i + 1; j < src.n2; j++)
             {
-                //body_body_grav_accel_sym(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
+                //body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
                 r_ij.x = r[j].x - r[i].x;
                 r_ij.y = r[j].y - r[i].y;
                 r_ij.z = r[j].z - r[i].z;
@@ -184,7 +176,8 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
     var3_t* a = (var3_t*)(h_dy + nv);
 
-    interaction_bound int_bound;
+    uint2_t snk, src;
+    snk = { 0, 0 }, src = { 0, 0 };
     var_t t = 0.0;
     int i = 0;
 
@@ -205,14 +198,14 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
-        for (i = 0; i < 100; i++)
+        for (i = 0; i < 50; i++)
         {
             cpu_calc_grav_accel(t, n_obj, r, p, a, false);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
-        for (i = 0; i < 10; i++)
+        for (i = 0; i < 5; i++)
         {
             cpu_calc_grav_accel(t, n_obj, r, p, a, false);
         }
@@ -230,7 +223,7 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
-    print(PROC_UNIT_CPU, method_name[0], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+    print(PROC_UNIT_CPU, method_name[0], param_name[0], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
 
 #ifdef _WIN32
     t0 = chrono::system_clock::now();
@@ -248,14 +241,14 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
-        for (i = 0; i < 100; i++)
+        for (i = 0; i < 50; i++)
         {
             cpu_calc_grav_accel(t, n_obj, r, p, a, true);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
-        for (i = 0; i < 10; i++)
+        for (i = 0; i < 5; i++)
         {
             cpu_calc_grav_accel(t, n_obj, r, p, a, true);
         }
@@ -273,7 +266,7 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
-    print(PROC_UNIT_CPU, method_name[1], param_name[0], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+    print(PROC_UNIT_CPU, method_name[1], param_name[0], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
 }
 
 void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, const var_t* h_p, var_t* h_dy, ofstream& o_result)
@@ -289,7 +282,6 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
     var3_t* a = (var3_t*)(h_dy + nv);
 
-    interaction_bound int_bound(snk, src);
     var_t t = 0.0;
     int i = 0;
 
@@ -310,14 +302,14 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
-        for (i = 0; i < 100; i++)
+        for (i = 0; i < 50; i++)
         {
             cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
-        for (i = 0; i < 10; i++)
+        for (i = 0; i < 5; i++)
         {
             cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
         }
@@ -335,7 +327,7 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
-    print(PROC_UNIT_CPU, method_name[0], param_name[1], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+    print(PROC_UNIT_CPU, method_name[0], param_name[1], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
 
 #ifdef _WIN32
     t0 = chrono::system_clock::now();
@@ -353,14 +345,14 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
-        for (i = 0; i < 100; i++)
+        for (i = 0; i < 50; i++)
         {
             cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
-        for (i = 0; i < 10; i++)
+        for (i = 0; i < 5; i++)
         {
             cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
         }
@@ -378,7 +370,7 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
 #endif
 
-    print(PROC_UNIT_CPU, method_name[1], param_name[1], int_bound, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
+    print(PROC_UNIT_CPU, method_name[1], param_name[1], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
 }
 
 #undef NDIM

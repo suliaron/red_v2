@@ -53,7 +53,7 @@ void open_stream(string& o_dir, string& filename, ofstream** output, benchmark_o
     }
 }
 
-void print(proc_unit_t proc_unit, string& method_name, string& param_name, interaction_bound int_bound, int n_body, int n_tpb, var_t Dt_CPU, var_t Dt_GPU, ofstream& sout, bool prn_to_scr)
+void print(proc_unit_t proc_unit, string& method_name, string& param_name, uint2_t snk, uint2_t src, int n_body, int n_tpb, var_t Dt_CPU, var_t Dt_GPU, ofstream& sout, bool prn_to_scr)
 {
     static const char*proc_unit_name[] =
     {
@@ -68,8 +68,8 @@ void print(proc_unit_t proc_unit, string& method_name, string& param_name, inter
             << setw(4) << proc_unit_name[proc_unit] << sep
             << setw(20) << method_name << sep
             << setw(20) << param_name << sep
-            << setw(6) << int_bound.sink.n2 - int_bound.sink.n1 << sep
-            << setw(6) << int_bound.source.n2 - int_bound.source.n1 << sep
+            << setw(6) << snk.n2 - snk.n1 << sep
+            << setw(6) << src.n2 - src.n1 << sep
             << setw(6) << n_body << sep
             << setw(5) << n_tpb << sep
             << scientific << setprecision(4) << setw(12) << Dt_CPU << sep
@@ -80,8 +80,8 @@ void print(proc_unit_t proc_unit, string& method_name, string& param_name, inter
         << setw(4) << proc_unit_name[proc_unit] << SEP
         << setw(20) << method_name << SEP
         << setw(20) << param_name << SEP
-        << setw(6) << int_bound.sink.n2 - int_bound.sink.n1 << SEP
-        << setw(6) << int_bound.source.n2 - int_bound.source.n1 << SEP
+        << setw(6) << snk.n2 - snk.n1 << SEP
+        << setw(6) << src.n2 - src.n1 << SEP
         << setw(6) << n_body << SEP
         << setw(5) << n_tpb << SEP
         << scientific << setprecision(4) << setw(12) << Dt_CPU << SEP

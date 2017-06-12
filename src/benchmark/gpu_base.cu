@@ -186,7 +186,8 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     static string method_name[] = { "base", "base with sym.", "tile", "tile advanced" };
     static string param_name[] = { "n_body", "snk src" };
 
-    interaction_bound int_bound;
+    uint2_t snk, src;
+    snk = { 0, 0 }, src = { 0, 0 };
     var_t Dt_CPU = 0.0;
 
     cudaDeviceProp deviceProp;
@@ -196,7 +197,7 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     int n_tpb = result.x;
     var_t Dt_GPU = result.y / 1.0e3;
 
-    print(PROC_UNIT_GPU, method_name[0], param_name[0], int_bound, n_obj, n_tpb, Dt_CPU, Dt_GPU, o_result, true);
+    print(PROC_UNIT_GPU, method_name[0], param_name[0], snk, src, n_obj, n_tpb, Dt_CPU, Dt_GPU, o_result, true);
 }
 
 #undef NDIM
