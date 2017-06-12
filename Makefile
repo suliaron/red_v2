@@ -63,6 +63,7 @@ util.o
 
 RED_BENCHMARK_OBJS := \
 cpu_base.o \
+gpu_base.o \
 main.o \
 util.o
 
