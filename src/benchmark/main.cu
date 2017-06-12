@@ -1,7 +1,6 @@
 #include <ctime>
 #include <iostream>
 #include <iomanip>
-#include <cfloat>
 
 #ifdef _WIN32
 #include <chrono>
