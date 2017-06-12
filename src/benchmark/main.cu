@@ -51,15 +51,16 @@ void benchmark(option& opt, ofstream& o_result)
         {
             allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
             populate(seed, i, h_y, h_p, h_md);
-
             benchmark_CPU(i, h_y, h_p, h_dy, o_result);
-
-            uint2_t snk;
-            uint2_t src;
-            snk.n1 = 0, snk.n2 = i;
-            src.n1 = 0, src.n2 = i;
+            deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
+        }
+        for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
+        {
+            allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
+            populate(seed, i, h_y, h_p, h_md);
+            uint2_t snk = { 0, i };
+            uint2_t src = { 0, i };
             benchmark_CPU(i, snk, src, h_y, h_p, h_dy, o_result);
-
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
         }
     }
