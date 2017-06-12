@@ -59,27 +59,27 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, const var3_t* r, const nbp_t::
     {
         for (uint32_t i = 0; i < n_obj; i++)
         {
-            var3_t r_ij = { 0.0, 0.0, 0.0 };
+            //var3_t r_ij = { 0.0, 0.0, 0.0 };
             for (uint32_t j = i + 1; j < n_obj; j++)
             {
-                //body_body_grav_accel_sym(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
-                r_ij.x = r[j].x - r[i].x;
-                r_ij.y = r[j].y - r[i].y;
-                r_ij.z = r[j].z - r[i].z;
+                body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
+                //r_ij.x = r[j].x - r[i].x;
+                //r_ij.y = r[j].y - r[i].y;
+                //r_ij.z = r[j].z - r[i].z;
 
-                var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-                var_t d = sqrt(d2);
-                var_t d_3 = K2 / (d * d2);
+                //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+                //var_t d = sqrt(d2);
+                //var_t d_3 = K2 / (d * d2);
 
-                var_t s = p[j].mass * d_3;
-                a[i].x += s * r_ij.x;
-                a[i].y += s * r_ij.y;
-                a[i].z += s * r_ij.z;
+                //var_t s = p[j].mass * d_3;
+                //a[i].x += s * r_ij.x;
+                //a[i].y += s * r_ij.y;
+                //a[i].z += s * r_ij.z;
 
-                s = p[i].mass * d_3;
-                a[j].x -= s * r_ij.x;
-                a[j].y -= s * r_ij.y;
-                a[j].z -= s * r_ij.z;
+                //s = p[i].mass * d_3;
+                //a[j].x -= s * r_ij.x;
+                //a[j].y -= s * r_ij.y;
+                //a[j].z -= s * r_ij.z;
             }
         }
     }
@@ -87,22 +87,22 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, const var3_t* r, const nbp_t::
     {
         for (uint32_t i = 0; i < n_obj; i++)
         {
-            var3_t r_ij = { 0.0, 0.0, 0.0 };
+            //var3_t r_ij = { 0.0, 0.0, 0.0 };
             for (uint32_t j = 0; j < n_obj; j++)
             {
                 if (i == j) continue;
-                //body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
-                r_ij.x = r[j].x - r[i].x;
-                r_ij.y = r[j].y - r[i].y;
-                r_ij.z = r[j].z - r[i].z;
+                body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                //r_ij.x = r[j].x - r[i].x;
+                //r_ij.y = r[j].y - r[i].y;
+                //r_ij.z = r[j].z - r[i].z;
 
-                var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-                var_t d = sqrt(d2);
-                var_t s = K2 * p[j].mass / (d * d2);
+                //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+                //var_t d = sqrt(d2);
+                //var_t s = K2 * p[j].mass / (d * d2);
 
-                a[i].x += s * r_ij.x;
-                a[i].y += s * r_ij.y;
-                a[i].z += s * r_ij.z;
+                //a[i].x += s * r_ij.x;
+                //a[i].y += s * r_ij.y;
+                //a[i].z += s * r_ij.z;
             }
         }
     }
@@ -114,27 +114,27 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, uint2_t snk, uint2_t src, cons
     {
         for (uint32_t i = snk.n1; i < snk.n2; i++)
         {
-            var3_t r_ij = { 0.0, 0.0, 0.0 };
+            //var3_t r_ij = { 0.0, 0.0, 0.0 };
             for (uint32_t j = i + 1; j < src.n2; j++)
             {
-                //body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
-                r_ij.x = r[j].x - r[i].x;
-                r_ij.y = r[j].y - r[i].y;
-                r_ij.z = r[j].z - r[i].z;
+                body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
+                //r_ij.x = r[j].x - r[i].x;
+                //r_ij.y = r[j].y - r[i].y;
+                //r_ij.z = r[j].z - r[i].z;
 
-                var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-                var_t d = sqrt(d2);
-                var_t d_3 = K2 / (d * d2);
+                //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+                //var_t d = sqrt(d2);
+                //var_t d_3 = K2 / (d * d2);
 
-                var_t s = p[j].mass * d_3;
-                a[i].x += s * r_ij.x;
-                a[i].y += s * r_ij.y;
-                a[i].z += s * r_ij.z;
+                //var_t s = p[j].mass * d_3;
+                //a[i].x += s * r_ij.x;
+                //a[i].y += s * r_ij.y;
+                //a[i].z += s * r_ij.z;
 
-                s = p[i].mass * d_3;
-                a[j].x -= s * r_ij.x;
-                a[j].y -= s * r_ij.y;
-                a[j].z -= s * r_ij.z;
+                //s = p[i].mass * d_3;
+                //a[j].x -= s * r_ij.x;
+                //a[j].y -= s * r_ij.y;
+                //a[j].z -= s * r_ij.z;
             }
         }
     }
@@ -142,22 +142,22 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, uint2_t snk, uint2_t src, cons
     {
         for (uint32_t i = snk.n1; i < snk.n2; i++)
         {
-            var3_t r_ij = { 0.0, 0.0, 0.0 };
+            //var3_t r_ij = { 0.0, 0.0, 0.0 };
             for (uint32_t j = src.n1; j < src.n2; j++)
             {
                 if (i == j) continue;
-                //body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
-                r_ij.x = r[j].x - r[i].x;
-                r_ij.y = r[j].y - r[i].y;
-                r_ij.z = r[j].z - r[i].z;
+                body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                //r_ij.x = r[j].x - r[i].x;
+                //r_ij.y = r[j].y - r[i].y;
+                //r_ij.z = r[j].z - r[i].z;
 
-                var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-                var_t d = sqrt(d2);
-                var_t s = K2 * p[j].mass / (d * d2);
+                //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+                //var_t d = sqrt(d2);
+                //var_t s = K2 * p[j].mass / (d * d2);
 
-                a[i].x += s * r_ij.x;
-                a[i].y += s * r_ij.y;
-                a[i].z += s * r_ij.z;
+                //a[i].x += s * r_ij.x;
+                //a[i].y += s * r_ij.y;
+                //a[i].z += s * r_ij.z;
             }
         }
     }
