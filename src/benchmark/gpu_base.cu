@@ -23,11 +23,6 @@ namespace kernel
         // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
         var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
 
-        // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
-        //r_ij.x = rj.x - ri.x;
-        //r_ij.y = rj.y - ri.y;
-        //r_ij.z = rj.z - ri.z;
-
         //// compute norm square of d vector [5 FLOPS] [3 read, 1 write]
         //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
         //var_t d = sqrt(d2);
@@ -52,7 +47,7 @@ namespace kernel
         {
             a[i].x = a[i].y = a[i].z = 0.0;
 
-            var3_t r_ij = { 0.0, 0.0, 0.0 };
+            //var3_t r_ij = { 0.0, 0.0, 0.0 };
             // j is the index of the SOURCE body
             for (uint32_t j = 0; j < n_obj; j++)
             {
@@ -85,7 +80,7 @@ namespace kernel
         {
             a[i].x = a[i].y = a[i].z = 0.0;
 
-            var3_t r_ij = { 0.0, 0.0, 0.0 };
+            //var3_t r_ij = { 0.0, 0.0, 0.0 };
             // j is the index of the SOURCE body
             for (uint32_t j = src.n1; j < src.n2; j++)
             {
