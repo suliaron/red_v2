@@ -78,7 +78,7 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, const var3_t* r, const nbp_t::
     }
 }
 
-void cpu_calc_grav_accel(var_t t, uint32_t n_obj, uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a, bool use_sym)
+void cpu_calc_grav_accel(var_t t, uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a, bool use_sym)
 {
     if (use_sym)
     {
@@ -237,26 +237,26 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     {
         for (i = 0; i < 1000; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
+            cpu_calc_grav_accel(t, snk, src, r, p, a, false);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 50; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
+            cpu_calc_grav_accel(t, snk, src, r, p, a, false);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
         for (i = 0; i < 5; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
+            cpu_calc_grav_accel(t, snk, src, r, p, a, false);
         }
     }
     else
     {
-        cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, false);
+        cpu_calc_grav_accel(t, snk, src, r, p, a, false);
     }
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
@@ -280,26 +280,26 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     {
         for (i = 0; i < 1000; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
+            cpu_calc_grav_accel(t, snk, src, r, p, a, true);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 50; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
+            cpu_calc_grav_accel(t, snk, src, r, p, a, true);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
         for (i = 0; i < 5; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
+            cpu_calc_grav_accel(t, snk, src, r, p, a, true);
         }
     }
     else
     {
-        cpu_calc_grav_accel(t, n_obj, snk, src, r, p, a, true);
+        cpu_calc_grav_accel(t, snk, src, r, p, a, true);
     }
 #ifdef _WIN32
     t1 = chrono::system_clock::now();

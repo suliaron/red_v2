@@ -73,9 +73,11 @@ void benchmark(option& opt, ofstream& o_result)
         var_t* d_p = 0x0;
         nbp_t::metadata_t* d_md = 0x0;
 
+        const uint16_t n_ppo = sizeof(nbp_t::param_t) / sizeof(var_t);
+
         for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
         {
-            const uint16_t n_ppo = sizeof(nbp_t::param_t) / sizeof(var_t);
+
             const uint32_t n_var = i * NVPO;
             const uint32_t n_par = i * n_ppo;
 
@@ -87,15 +89,30 @@ void benchmark(option& opt, ofstream& o_result)
             redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
             redutil2::copy_vector_to_device(d_md, h_md, i * sizeof(nbp_t::metadata_t));
 
-            //uint2_t snk;
-            //uint2_t src;
-            //snk.n1 = 0, snk.n2 = i;
-            //src.n1 = 0, src.n2 = i;
             benchmark_GPU(opt.id_dev, i, d_y, d_p, d_dy, o_result);
-            //benchmark_GPU(i, snk, src, h_y, h_p, h_dy, o_result);
 
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
             deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
+        }
+        for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
+        {
+            //const uint32_t n_var = i * NVPO;
+            //const uint32_t n_par = i * n_ppo;
+
+            //allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
+            //populate(seed, i, h_y, h_p, h_md);
+            //allocate_device_storage(i, &d_y, &d_dy, &d_p, &d_md);
+
+            //redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
+            //redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
+            //redutil2::copy_vector_to_device(d_md, h_md, i * sizeof(nbp_t::metadata_t));
+
+            //uint2_t snk = { 0, i };
+            //uint2_t src = { 0, i };
+            //benchmark_GPU(i, snk, src, h_y, h_p, h_dy, o_result);
+
+            //deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
+            //deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
         }
     }
 
@@ -148,8 +165,8 @@ void compare(option& opt)
 
         //cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy1, false);
         //cpu_calc_grav_accel(n_obj, h_y, h_p, h_dy2, true);
-        cpu_calc_grav_accel(0.0, n_obj, snk, src, r, p, a1, false);
-        cpu_calc_grav_accel(0.0, n_obj, snk, src, r, p, a2, true);
+        cpu_calc_grav_accel(0.0, snk, src, r, p, a1, false);
+        cpu_calc_grav_accel(0.0, snk, src, r, p, a2, true);
 
         bool success = compare(n_obj, opt.tol, a1, a2);
         if (success)
@@ -196,8 +213,8 @@ void compare(option& opt)
             memset(a1, 0, n_obj * sizeof(var3_t));
 
             cpu_calc_grav_accel(0.0, n_obj, r, p, a1, true);
-            //cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy1, false);
-            //cpu_calc_grav_accel(n_obj, snk, src, h_y, h_p, h_dy2, true);
+            //cpu_calc_grav_accel(snk, src, h_y, h_p, h_dy1, false);
+            //cpu_calc_grav_accel(snk, src, h_y, h_p, h_dy2, true);
         }
         {
             // Create aliases
