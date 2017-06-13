@@ -23,14 +23,14 @@ namespace kernel
         // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
         var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
 
-        //// compute norm square of d vector [5 FLOPS] [3 read, 1 write]
-        //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-        //var_t d = sqrt(d2);
-        //var_t s = K2 * mj / (d2 * d);
-
         // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
         var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-        d2 = K2 * mj / (sqrt(d2) * d2);
+        var_t d = sqrt(d2);
+        var_t s = K2 * mj / (d2 * d);
+
+        // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
+        //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+        //d2 = K2 * mj / (sqrt(d2) * d2);
 
         ai.x += d2 * r_ij.x;
         ai.y += d2 * r_ij.y;
