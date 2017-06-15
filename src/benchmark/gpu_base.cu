@@ -71,32 +71,49 @@ namespace kernel
     } /* calc_grav_accel_naive () */
 
     __global__
-        void calc_grav_accel_tile_verbose(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_tile(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
 
-        const uint32_t i = blockIdx.x*blockDim.x + threadIdx.x;
+        const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
         var3_t acc = { 0.0, 0.0, 0.0 };
         var3_t my_pos;
 
-        if (0 == i)
+        // To avoid overruning the global_x buffer
+        if (n_obj > i)
         {
-            printf("[i = 0]   gridDim = [%3d, %3d %3d]\n", gridDim.x, gridDim.y, gridDim.z);
-            printf("[i = 0]  blockDim = [%3d, %3d %3d]\n", blockDim.x, blockDim.y, blockDim.z);
-            printf("[i = 0]: nThreads = gridDim.x * blockDim.x = %3d\n", gridDim.x * blockDim.x);
+            my_pos = r[i];
         }
 
-        if (i < n_obj)
+        for (int tile = 0; (tile * blockDim.x) < n_obj; tile++)
         {
-            if (0 == threadIdx.x)
+            const int idx = tile * blockDim.x + threadIdx.x;
+            // To avoid overruning the r and mass buffer
+            if (n_obj > idx)
             {
-                printf("[0 == threadIdx.x]: blockIdx.x = %3d\n", blockIdx.x);
+                sh_pos[threadIdx.x] = r[idx];
             }
-            if (0 == blockIdx.x)
+            __syncthreads();
+
+            for (int j = 0; j < blockDim.x; j++)
             {
-                printf("[0 == blockIdx.x]: threadIdx.x = %3d\n", threadIdx.x);
+                // To avoid overrun the input arrays
+                if (n_obj <= (tile * blockDim.x) + j)
+                {
+                    break;
+                }
+                // To avoid self-interaction or mathematically division by zero
+                if (i != (tile * blockDim.x) + j)
+                {
+                    body_body_grav_accel(my_pos, sh_pos[j], p[j].mass, acc);
+                }
             }
+            __syncthreads();
+        }
+        if (n_obj > i)
+        {
+            a[i] = acc;
         }
     }
 } /* namespace kernel */
@@ -112,7 +129,7 @@ float gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t&
 
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
-    kernel::calc_grav_accel_naive << < grid, block >> >(n_obj, r, p, a);
+    kernel::calc_grav_accel_naive <<< grid, block >>>(n_obj, r, p, a);
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
@@ -133,7 +150,7 @@ float gpu_calc_grav_accel_naive(uint2_t snk, uint2_t src, unsigned int n_tpb, cu
 
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
-    kernel::calc_grav_accel_naive << < grid, block >> >(snk, src, r, p, a);
+    kernel::calc_grav_accel_naive <<< grid, block >>>(snk, src, r, p, a);
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
@@ -144,6 +161,29 @@ float gpu_calc_grav_accel_naive(uint2_t snk, uint2_t src, unsigned int n_tpb, cu
 
     return elapsed_time;
 }
+
+float gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+{
+    float elapsed_time = 0.0f;
+
+    dim3 grid((n_obj + n_tpb - 1) / n_tpb);
+    dim3 block(n_tpb);
+
+    CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+
+    size_t sh_mem_size = n_tpb * sizeof(var3_t);
+    kernel::calc_grav_accel_tile <<< grid, block, sh_mem_size >>>(n_obj, r, p, a);
+    CUDA_CHECK_ERROR();
+
+    CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
+    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+
+    // Computes the elapsed time between two events in milliseconds with a resolution of around 0.5 microseconds.
+    CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, start, stop));
+
+    return elapsed_time;
+}
+
 
 float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
 {
@@ -255,6 +295,61 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, uint2_t snk, uint2_t src, unsig
     return result;
 }
 
+float2 gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
+{
+    static bool first_call = true;
+    static uint32_t n_last;
+    static unsigned int opt_n_tpb;
+
+    float2 result = { 0.0f, FLT_MAX };
+
+    cudaEvent_t start, stop;
+    CUDA_SAFE_CALL(cudaEventCreate(&start));
+    CUDA_SAFE_CALL(cudaEventCreate(&stop));
+
+    if (first_call)
+    {
+        n_last = n_obj;
+        opt_n_tpb = 16;
+    }
+
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+
+    // Create aliases
+    const var3_t* r = (var3_t*)d_y;
+    const nbp_t::param_t* p = (nbp_t::param_t*)d_p;
+    var3_t* a = (var3_t*)(d_dy + nv);
+
+    if (first_call || n_last != n_obj)
+    {
+        for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb / 2; n_tpb += 16)
+        {
+            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, n_tpb, start, stop, r, p, a);
+            printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
+            if (elapsed_time < result.y)
+            {
+                result.x = (float)n_tpb;
+                result.y = elapsed_time;
+            }
+        }
+        opt_n_tpb = (unsigned int)result.x;
+        n_last = n_obj;
+    }
+    else
+    {
+        float elapsed_time = gpu_calc_grav_accel_tile(n_obj, opt_n_tpb, start, stop, r, p, a);
+        result.x = (float)opt_n_tpb;
+        result.y = elapsed_time;
+    }
+    first_call = false;
+
+    CUDA_SAFE_CALL(cudaEventDestroy(stop));
+    CUDA_SAFE_CALL(cudaEventDestroy(start));
+
+    return result;
+}
+
 void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_p, var_t* d_dy, ofstream& o_result)
 {
     static string method_name[] = { "base", "base_with_sym", "tile", "tile_advanced" };
@@ -280,6 +375,14 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     Dt_GPU = result.y / 1.0e3; // [sec]
 
     print(PROC_UNIT_GPU, method_name[0], param_name[1], snk, src, n_obj, n_tpb, Dt_CPU, Dt_GPU, o_result, true);
+
+    result = gpu_calc_grav_accel_tile(n_obj, deviceProp.maxThreadsPerBlock, d_y, d_p, d_dy);
+    n_tpb = (unsigned int)result.x;
+    Dt_GPU = result.y / 1.0e3; // [sec]
+
+    snk.n2 = 0;
+    src.n2 = 0;
+    print(PROC_UNIT_GPU, method_name[2], param_name[0], snk, src, n_obj, n_tpb, Dt_CPU, Dt_GPU, o_result, true);
 }
 
 #undef NDIM
