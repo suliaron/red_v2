@@ -94,26 +94,6 @@ void benchmark(option& opt, ofstream& o_result)
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
             deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
         }
-        for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
-        {
-            //const uint32_t n_var = i * NVPO;
-            //const uint32_t n_par = i * n_ppo;
-
-            //allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
-            //populate(seed, i, h_y, h_p, h_md);
-            //allocate_device_storage(i, &d_y, &d_dy, &d_p, &d_md);
-
-            //redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
-            //redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
-            //redutil2::copy_vector_to_device(d_md, h_md, i * sizeof(nbp_t::metadata_t));
-
-            //uint2_t snk = { 0, i };
-            //uint2_t src = { 0, i };
-            //benchmark_GPU(i, snk, src, h_y, h_p, h_dy, o_result);
-
-            //deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
-            //deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
-        }
     }
 
     cout << "Done" << endl;
@@ -222,7 +202,8 @@ void compare(option& opt)
             const nbp_t::param_t* p = (nbp_t::param_t*)d_p;
             var3_t* a = (var3_t*)(d_dy + nv);
 
-            float elapsed_time = gpu_calc_grav_accel_naive(n_obj, 256, start, stop, r, p, a);
+            //float elapsed_time = gpu_calc_grav_accel_naive(n_obj, 256, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
 
             //dim3 grid((n_obj + 256 - 1) / 256);
             //dim3 block(256);
@@ -250,6 +231,7 @@ void compare(option& opt)
 
 /*
 -n0 10 -n1 100000 -dn 10 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile benchmark
+-gpu -id_dev -0 -n0 10 -n1 10000 -dn 10 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile inline_0615_1
 -n0 2000 -tol 1.0e-16 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile compare
 
 */

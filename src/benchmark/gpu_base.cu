@@ -106,6 +106,7 @@ namespace kernel
                 // To avoid self-interaction or mathematically division by zero
                 if (i != (tile * blockDim.x) + j)
                 {
+                    // Error: p[j].mass the index has to be reconsider!!
                     body_body_grav_accel(my_pos, sh_pos[j], p[j].mass, acc);
                 }
             }
