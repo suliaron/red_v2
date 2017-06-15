@@ -25,9 +25,6 @@ namespace kernel
 
         // compute square of r_ij vector [5 FLOPS] [3 read, 1 write]
         var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-        //var_t d = sqrt(d2);
-        //var_t s = K2 * mj / (d2 * d);
-
         var_t s = K2 * mj / (d2 * sqrt(d2));
 
         ai.x += s * r_ij.x;
@@ -45,25 +42,24 @@ namespace kernel
         {
             a[i].x = a[i].y = a[i].z = 0.0;
 
-            //var3_t r_ij = { 0.0, 0.0, 0.0 };
+            var3_t r_ij = { 0.0, 0.0, 0.0 };
             // j is the index of the SOURCE body
             for (uint32_t j = 0; j < n_obj; j++)
             {
                 if (i == j) continue;
-                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
-                //r_ij.x = r[j].x - r[i].x;
-                //r_ij.y = r[j].y - r[i].y;
-                //r_ij.z = r[j].z - r[i].z;
+                //kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                r_ij.x = r[j].x - r[i].x;
+                r_ij.y = r[j].y - r[i].y;
+                r_ij.z = r[j].z - r[i].z;
 
-                //// compute norm square of d vector [5 FLOPS] [3 read, 1 write]
-                //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-                //var_t d = sqrt(d2);
-                //var_t s = K2 * p[j].mass / (d * d2);
+                // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
+                var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+                var_t s = K2 * p[j].mass / (d2 * sqrt(d2));
 
-                //// 6 FLOP
-                //a[i].x += s * r_ij.x;
-                //a[i].y += s * r_ij.y;
-                //a[i].z += s * r_ij.z;
+                // 6 FLOP
+                a[i].x += s * r_ij.x;
+                a[i].y += s * r_ij.y;
+                a[i].z += s * r_ij.z;
             } // 36 FLOP
         }
     } /* calc_grav_accel_naive () */
