@@ -25,8 +25,10 @@ namespace kernel
 
         // compute square of r_ij vector [5 FLOPS] [3 read, 1 write]
         var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-        var_t d = sqrt(d2);
-        var_t s = K2 * mj / (d2 * d);
+        //var_t d = sqrt(d2);
+        //var_t s = K2 * mj / (d2 * d);
+
+        var_t s = K2 * mj / (d2 * sqrt(d2));
 
         ai.x += s * r_ij.x;
         ai.y += s * r_ij.y;
