@@ -80,7 +80,7 @@ namespace kernel
         var3_t acc = { 0.0, 0.0, 0.0 };
         var3_t my_pos;
 
-        // To avoid overruning the global_x buffer
+        // To avoid overruning the r buffer
         if (n_obj > i)
         {
             my_pos = r[i];
