@@ -74,6 +74,7 @@ namespace kernel
         void calc_grav_accel_tile(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
+        extern __shared__ var_t mass[];
 
         const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -83,8 +84,6 @@ namespace kernel
         // To avoid overruning the r buffer
         if (n_obj > i)
         {
-            printf("i = %3d\n", i);
-            __syncthreads();
             my_pos = r[i];
             for (uint32_t tile = 0; (tile * blockDim.x) < n_obj; tile++)
             {
@@ -93,6 +92,7 @@ namespace kernel
                 if (n_obj > idx)
                 {
                     sh_pos[threadIdx.x] = r[idx];
+                    mass[threadIdx.x] = p[idx].mass;
                 }
                 __syncthreads();
 
@@ -106,14 +106,11 @@ namespace kernel
                     // To avoid self-interaction
                     if (i != (tile * blockDim.x) + j)
                     {
-                        // Error: p[j].mass the index has to be reconsider!!
-                        printf("i = %3d idx = %3d tile = %3d blockDim.x = %3d j = %3d [%3d]\n", i, idx, tile, blockDim.x, j, (tile * blockDim.x) + j);
-                        body_body_grav_accel(my_pos, sh_pos[idx], p[(tile * blockDim.x) + j].mass, acc);
+                        body_body_grav_accel(my_pos, sh_pos[j], p[(tile * blockDim.x) + j].mass, acc);
                     }
                 }
                 __syncthreads();
             }
-            printf("i = %3d\n", i);
             a[i] = acc;
         }
     }
