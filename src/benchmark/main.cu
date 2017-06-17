@@ -203,7 +203,7 @@ void compare(option& opt)
             var3_t* a = (var3_t*)(d_dy + nv);
 
             //float elapsed_time = gpu_calc_grav_accel_naive(n_obj, 256, start, stop, r, p, a);
-            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 16, start, stop, r, p, a);
 
             //dim3 grid((n_obj + 256 - 1) / 256);
             //dim3 block(256);

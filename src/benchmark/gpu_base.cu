@@ -83,37 +83,37 @@ namespace kernel
         // To avoid overruning the r buffer
         if (n_obj > i)
         {
+            printf("i = %3d\n", i);
+            __syncthreads();
             my_pos = r[i];
-        }
-
-        for (int tile = 0; (tile * blockDim.x) < n_obj; tile++)
-        {
-            const int idx = tile * blockDim.x + threadIdx.x;
-            // To avoid overruning the r and mass buffer
-            if (n_obj > idx)
+            for (uint32_t tile = 0; (tile * blockDim.x) < n_obj; tile++)
             {
-                sh_pos[threadIdx.x] = r[idx];
-            }
-            __syncthreads();
+                const uint32_t idx = tile * blockDim.x + threadIdx.x;
+                // To avoid overruning the r and mass buffer
+                if (n_obj > idx)
+                {
+                    sh_pos[threadIdx.x] = r[idx];
+                }
+                __syncthreads();
 
-            for (int j = 0; j < blockDim.x; j++)
-            {
-                // To avoid overrun the input arrays
-                if (n_obj <= (tile * blockDim.x) + j)
+                for (int j = 0; j < blockDim.x; j++)
                 {
-                    break;
+                    // To avoid overrun the input arrays
+                    if (n_obj <= (tile * blockDim.x) + j)
+                    {
+                        break;
+                    }
+                    // To avoid self-interaction
+                    if (i != (tile * blockDim.x) + j)
+                    {
+                        // Error: p[j].mass the index has to be reconsider!!
+                        printf("i = %3d idx = %3d tile = %3d blockDim.x = %3d j = %3d [%3d]\n", i, idx, tile, blockDim.x, j, (tile * blockDim.x) + j);
+                        body_body_grav_accel(my_pos, sh_pos[idx], p[(tile * blockDim.x) + j].mass, acc);
+                    }
                 }
-                // To avoid self-interaction or mathematically division by zero
-                if (i != (tile * blockDim.x) + j)
-                {
-                    // Error: p[j].mass the index has to be reconsider!!
-                    body_body_grav_accel(my_pos, sh_pos[j], p[j].mass, acc);
-                }
+                __syncthreads();
             }
-            __syncthreads();
-        }
-        if (n_obj > i)
-        {
+            printf("i = %3d\n", i);
             a[i] = acc;
         }
     }
