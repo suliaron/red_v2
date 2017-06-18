@@ -206,7 +206,7 @@ void compare(option& opt)
             //float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
             uint2_t snk = { 0, n_obj };
             uint2_t src = { 0, n_obj };
-            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, r, p, a);
             redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
         }
         const var3_t* a1 = (var3_t*)(h_dy1 + nv);
