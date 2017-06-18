@@ -45,6 +45,7 @@ void allocate_device_storage(uint32_t n_obj, var_t** d_y, var_t** d_a, var_t** d
 void deallocate_host_storage(var_t** h_y, var_t** h_dy, var_t** h_p, nbp_t::metadata_t** h_md);
 void deallocate_device_storage(var_t** d_y, var_t** d_a, var_t** d_p, nbp_t::metadata_t** d_md);
 
+void populate(uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md);
 void populate(uint32_t seed, uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md);
 
 bool compare(uint32_t n, var_t tol, const var3_t* y1, const var3_t* y2);

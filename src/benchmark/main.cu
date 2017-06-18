@@ -173,7 +173,8 @@ void compare(option& opt)
 
         allocate_host_storage(n_obj, &h_y, &h_dy1, &h_p, &h_md);
         ALLOCATE_HOST_VECTOR((void**)(&h_dy2), n_var * sizeof(var_t));
-        populate(seed, n_obj, h_y, h_p, h_md);
+        //populate(seed, n_obj, h_y, h_p, h_md);
+        populate(n_obj, h_y, h_p, h_md);
         allocate_device_storage(n_obj, &d_y, &d_dy, &d_p, &d_md);
 
         redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
@@ -192,9 +193,13 @@ void compare(option& opt)
             var3_t* a1 = (var3_t*)(h_dy1 + nv);
             memset(a1, 0, n_obj * sizeof(var3_t));
 
-            cpu_calc_grav_accel(0.0, n_obj, r, p, a1, true);
-            //cpu_calc_grav_accel(snk, src, h_y, h_p, h_dy1, false);
-            //cpu_calc_grav_accel(snk, src, h_y, h_p, h_dy2, true);
+            //for (uint32_t i = 0; i < n_obj; i++)
+            //{
+            //    printf("[%3d] %25.16le\n", i, p[i].mass);
+            //}
+            //printf("\n");
+
+            cpu_calc_grav_accel(0.0, n_obj, r, p, a1, false);
         }
         {
             // Create aliases
@@ -203,12 +208,7 @@ void compare(option& opt)
             var3_t* a = (var3_t*)(d_dy + nv);
 
             //float elapsed_time = gpu_calc_grav_accel_naive(n_obj, 256, start, stop, r, p, a);
-            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 16, start, stop, r, p, a);
-
-            //dim3 grid((n_obj + 256 - 1) / 256);
-            //dim3 block(256);
-            //kernel::calc_grav_accel_naive<<< grid, block >>>(n_obj, r, p, a);
-            //CUDA_CHECK_ERROR();
+            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
             redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
         }
         const var3_t* a1 = (var3_t*)(h_dy1 + nv);

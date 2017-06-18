@@ -9,6 +9,7 @@
 #include "util.h"
 #include "redutil2.h"
 
+#define VECTOR_FMT (%12.4le, %12.4le, %12.4le)
 
 #define NDIM   3        // Number of space dimension
 #define NVPO   6        // Number of variables per object (3 space and 3 velocity coordinates)
@@ -74,10 +75,8 @@ namespace kernel
         void calc_grav_accel_tile(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
-        extern __shared__ var_t mass[];
 
         const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
-
         var3_t acc = { 0.0, 0.0, 0.0 };
         var3_t my_pos;
 
@@ -85,34 +84,39 @@ namespace kernel
         if (n_obj > i)
         {
             my_pos = r[i];
-            for (uint32_t tile = 0; (tile * blockDim.x) < n_obj; tile++)
-            {
-                const uint32_t idx = tile * blockDim.x + threadIdx.x;
-                // To avoid overruning the r and mass buffer
-                if (n_obj > idx)
-                {
-                    sh_pos[threadIdx.x] = r[idx];
-                    mass[threadIdx.x] = p[idx].mass;
-                }
-                __syncthreads();
-
-                for (int j = 0; j < blockDim.x; j++)
-                {
-                    // To avoid overrun the input arrays
-                    if (n_obj <= (tile * blockDim.x) + j)
-                    {
-                        break;
-                    }
-                    // To avoid self-interaction
-                    if (i != (tile * blockDim.x) + j)
-                    {
-                        body_body_grav_accel(my_pos, sh_pos[j], p[(tile * blockDim.x) + j].mass, acc);
-                    }
-                }
-                __syncthreads();
-            }
-            a[i] = acc;
         }
+        for (uint32_t tile = 0; (tile * blockDim.x) < n_obj; tile++)
+        {
+            const uint32_t idx = tile * blockDim.x + threadIdx.x;
+            // To avoid overruning the r and mass buffer
+            if (n_obj > idx)
+            {
+                sh_pos[threadIdx.x] = r[idx];
+            }
+            __syncthreads();
+
+            for (int j = 0; j < blockDim.x; j++)
+            {
+                // To avoid overrun the input arrays
+                if (n_obj <= (tile * blockDim.x) + j)
+                    break;
+                // To avoid self-interaction
+                if (i == (tile * blockDim.x) + j)
+                    continue;
+
+                //if (8 == i)
+                //{
+                //    printf("    j = %3d [%3d], acc = (%12.4le, %12.4le, %12.4le)\n", j, (tile * blockDim.x) + j, acc.x, acc.y, acc.z);
+                //    printf("    my_pos = (%12.4le, %12.4le, %12.4le) sh_pos[j] = (%12.4le, %12.4le, %12.4le) mj = %25.16le\n\n", my_pos.x, my_pos.y, my_pos.z, sh_pos[j].x, sh_pos[j].y, sh_pos[j].z, p[(tile * blockDim.x) + j].mass);
+                //}
+                body_body_grav_accel(my_pos, sh_pos[j], p[(tile * blockDim.x) + j].mass, acc);
+            }
+            __syncthreads();
+        }
+        if (n_obj > i)
+        {
+            a[i] = acc;
+        }        
     }
 } /* namespace kernel */
 
