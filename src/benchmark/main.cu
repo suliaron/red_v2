@@ -181,11 +181,6 @@ void compare(option& opt)
         redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
         redutil2::copy_vector_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
 
-        //uint2_t snk;
-        //uint2_t src;
-        //snk.n1 = 0, snk.n2 = n_obj;
-        //src.n1 = 0, src.n2 = n_obj;
-
         {
             // Create aliases
             const var3_t* r = (var3_t*)h_y;
@@ -199,7 +194,7 @@ void compare(option& opt)
             //}
             //printf("\n");
 
-            cpu_calc_grav_accel(0.0, n_obj, r, p, a1, false);
+            cpu_calc_grav_accel(0.0, n_obj, r, p, a1, true);
         }
         {
             // Create aliases
@@ -208,6 +203,9 @@ void compare(option& opt)
             var3_t* a = (var3_t*)(d_dy + nv);
 
             //float elapsed_time = gpu_calc_grav_accel_naive(n_obj, 256, start, stop, r, p, a);
+            //float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
+            uint2_t snk = { 0, n_obj };
+            uint2_t src = { 0, n_obj };
             float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
             redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
         }
@@ -230,10 +228,8 @@ void compare(option& opt)
 
 
 /*
--n0 10 -n1 100000 -dn 10 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile benchmark
--gpu -id_dev -0 -n0 10 -n1 10000 -dn 10 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile inline_0615_1
--n0 2000 -tol 1.0e-16 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile compare
-
+-gpu -id_dev -0 -n0 10 -n1 10000 -dn 10 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile inline_0618_1
+-gpu -id_dev 0 -n0 5000 -tol 1.0e-16 -v -odir C:\Work\red.cuda.Results\v2.0\Benchmark\Test_01 -bFile compare
 */
 int main(int argc, const char** argv, const char** env)
 {
