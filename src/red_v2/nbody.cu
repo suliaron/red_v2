@@ -21,7 +21,151 @@ using namespace redutil2;
 
 namespace kernel_nbody
 {
-__global__
+    // 36 FLOP
+    inline __host__ __device__
+        void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& ai)
+    {
+        // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
+        var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
+
+        // compute square of r_ij vector [5 FLOPS + ] [3 read, 1 write]
+        var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+        var_t s = K2 * mj / (d2 * sqrt(d2));
+
+        // 6 FLOP
+        ai.x += s * r_ij.x;
+        ai.y += s * r_ij.y;
+        ai.z += s * r_ij.z;
+    } /* body_body_grav_accel() */
+
+    __global__
+        void calc_grav_accel_naive(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+    {
+        // i is the index of the SINK body
+        const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (i < n_obj)
+        {
+            // j is the index of the SOURCE body
+            for (uint32_t j = 0; j < n_obj; j++)
+            {
+                if (i == j) continue;
+                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+            }
+        }
+    } /* calc_grav_accel_naive () */
+
+    __global__
+        void calc_grav_accel_naive(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+    {
+        // i is the index of the SINK body
+        const uint32_t i = snk.n1 + blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (snk.n2 > i)
+        {
+            // j is the index of the SOURCE body
+            for (uint32_t j = src.n1; j < src.n2; j++)
+            {
+                if (i == j) continue;
+                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+            }
+        }
+    } /* calc_grav_accel_naive () */
+
+    __global__
+        void calc_grav_accel_tile(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+    {
+        extern __shared__ var3_t sh_pos[];
+
+        const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+        //var3_t acc = { 0.0, 0.0, 0.0 };
+        var3_t acc = a[i];
+        var3_t my_pos;
+
+        // To avoid overruning the r buffer
+        if (n_obj > i)
+        {
+            my_pos = r[i];
+        }
+        // Note! : the for cycle must be outside the upper if clause, otherwise the sh_pos array will
+        // not recive the input for the last tile! The reason is that some thread will be not considered
+        // in the if (n_obj > idx) clause.
+        for (uint32_t tile = 0; (tile * blockDim.x) < n_obj; tile++)
+        {
+            const uint32_t idx = tile * blockDim.x + threadIdx.x;
+            // To avoid overruning the r and mass buffer
+            if (n_obj > idx)
+            {
+                sh_pos[threadIdx.x] = r[idx];
+            }
+            __syncthreads();
+
+            for (int j = 0; j < blockDim.x; j++)
+            {
+                // To avoid overrun the input arrays
+                if (n_obj <= (tile * blockDim.x) + j)
+                    break;
+                // To avoid self-interaction
+                if (i == (tile * blockDim.x) + j)
+                    continue;
+                body_body_grav_accel(my_pos, sh_pos[j], p[(tile * blockDim.x) + j].mass, acc);
+            }
+            __syncthreads();
+        }
+        if (n_obj > i)
+        {
+            a[i] = acc;
+        }
+    }
+
+    __global__
+        void calc_grav_accel_tile(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+    {
+        extern __shared__ var3_t sh_pos[];
+
+        const uint32_t i = snk.n1 + blockIdx.x * blockDim.x + threadIdx.x;
+        //var3_t acc = { 0.0, 0.0, 0.0 };
+        var3_t acc = a[i];
+        var3_t my_pos;
+
+        // To avoid overruning the r buffer
+        if (snk.n2 > i)
+        {
+            my_pos = r[i];
+        }
+        // Note! : the for cycle must be outside the upper if clause, otherwise the sh_pos array will
+        // not recive the input for the last tile! The reason is that some thread will be not considered
+        // in the if (n_obj > idx) clause.
+        for (uint32_t tile = 0; (tile * blockDim.x) < src.n2; tile++)
+        {
+            const uint32_t idx = src.n1 + tile * blockDim.x + threadIdx.x;
+            // To avoid overruning the r and mass buffer
+            if (src.n2 > idx)
+            {
+                sh_pos[threadIdx.x] = r[idx];
+            }
+            __syncthreads();
+
+            for (int j = 0; j < blockDim.x; j++)
+            {
+                // To avoid overrun then input arrays
+                if (src.n2 <= src.n1 + (tile * blockDim.x) + j)
+                    break;
+                // To avoid self-interaction
+                if (i == src.n1 + (tile * blockDim.x) + j)
+                    continue;
+                body_body_grav_accel(my_pos, sh_pos[j], p[(tile * blockDim.x) + j].mass, acc);
+            }
+            __syncthreads();
+        }
+        if (snk.n2 > i)
+        {
+            a[i] = acc;
+        }
+    }
+
+    
+    __global__
 void calc_grav_accel_naive
 	(
 		uint32_t n_obj, 

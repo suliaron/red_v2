@@ -36,7 +36,7 @@ namespace kernel
     } /* body_body_grav_accel() */
 
     __global__
-        void calc_grav_accel_naive(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_naive(uint32_t n_obj, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         // i is the index of the SINK body
         const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -53,7 +53,7 @@ namespace kernel
     } /* calc_grav_accel_naive () */
 
     __global__
-        void calc_grav_accel_naive(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_naive(uint2_t snk, uint2_t src, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         // i is the index of the SINK body
         const uint32_t i = snk.n1 + blockIdx.x * blockDim.x + threadIdx.x;
@@ -70,7 +70,7 @@ namespace kernel
     } /* calc_grav_accel_naive () */
 
     __global__
-        void calc_grav_accel_tile(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_tile(uint32_t n_obj, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
 
@@ -116,7 +116,7 @@ namespace kernel
     }
 
     __global__
-        void calc_grav_accel_tile(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_tile(uint2_t snk, uint2_t src, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
 
@@ -164,7 +164,7 @@ namespace kernel
 
 
 
-float gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+float gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
 {
     float elapsed_time = 0.0f;
 
@@ -173,7 +173,7 @@ float gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t&
 
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
-    kernel::calc_grav_accel_naive <<< grid, block >>>(n_obj, r, p, a);
+    kernel::calc_grav_accel_naive <<< grid, block >>>(n_obj, md, r, p, a);
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
@@ -185,7 +185,7 @@ float gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t&
     return elapsed_time;
 }
 
-float gpu_calc_grav_accel_naive(uint2_t snk, uint2_t src, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+float gpu_calc_grav_accel_naive(uint2_t snk, uint2_t src, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
 {
     float elapsed_time = 0.0f;
 
@@ -194,7 +194,7 @@ float gpu_calc_grav_accel_naive(uint2_t snk, uint2_t src, unsigned int n_tpb, cu
 
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
-    kernel::calc_grav_accel_naive <<< grid, block >>>(snk, src, r, p, a);
+    kernel::calc_grav_accel_naive <<< grid, block >>>(snk, src, md, r, p, a);
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
@@ -206,7 +206,7 @@ float gpu_calc_grav_accel_naive(uint2_t snk, uint2_t src, unsigned int n_tpb, cu
     return elapsed_time;
 }
 
-float gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+float gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
 {
     float elapsed_time = 0.0f;
 
@@ -216,7 +216,7 @@ float gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& 
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
     size_t sh_mem_size = n_tpb * sizeof(var3_t);
-    kernel::calc_grav_accel_tile <<< grid, block, sh_mem_size >>>(n_obj, r, p, a);
+    kernel::calc_grav_accel_tile <<< grid, block, sh_mem_size >>>(n_obj, md, r, p, a);
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
@@ -228,7 +228,7 @@ float gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int n_tpb, cudaEvent_t& 
     return elapsed_time;
 }
 
-float gpu_calc_grav_accel_tile(uint2_t snk, uint2_t src, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+float gpu_calc_grav_accel_tile(uint2_t snk, uint2_t src, unsigned int n_tpb, cudaEvent_t& start, cudaEvent_t& stop, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
 {
     float elapsed_time = 0.0f;
 
@@ -238,7 +238,7 @@ float gpu_calc_grav_accel_tile(uint2_t snk, uint2_t src, unsigned int n_tpb, cud
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
     size_t sh_mem_size = n_tpb * sizeof(var3_t);
-    kernel::calc_grav_accel_tile << < grid, block, sh_mem_size >> >(snk, src, r, p, a);
+    kernel::calc_grav_accel_tile << < grid, block, sh_mem_size >> >(snk, src, md, r, p, a);
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
@@ -251,7 +251,7 @@ float gpu_calc_grav_accel_tile(uint2_t snk, uint2_t src, unsigned int n_tpb, cud
 }
 
 
-float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
+float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const nbp_t::metadata_t* d_md, const var_t* d_y, const var_t* d_p, var_t* d_dy)
 {
     static bool first_call = true;
     static uint32_t n_last;
@@ -281,7 +281,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
     {
         for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb/2; n_tpb += 16)
         {            
-            float elapsed_time = gpu_calc_grav_accel_naive(n_obj, n_tpb, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_naive(n_obj, n_tpb, start, stop, d_md, r, p, a);
             printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
             if (elapsed_time < result.y)
             {
@@ -294,7 +294,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
     }
     else
     {
-        float elapsed_time = gpu_calc_grav_accel_naive(n_obj, opt_n_tpb, start, stop, r, p, a);
+        float elapsed_time = gpu_calc_grav_accel_naive(n_obj, opt_n_tpb, start, stop, d_md, r, p, a);
         result.x = (float)opt_n_tpb;
         result.y = elapsed_time;  // [ms]
     }
@@ -306,7 +306,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, unsigned int max_n_tpb, const v
     return result;
 }
 
-float2 gpu_calc_grav_accel_naive(uint32_t n_obj, uint2_t snk, uint2_t src, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
+float2 gpu_calc_grav_accel_naive(uint32_t n_obj, uint2_t snk, uint2_t src, unsigned int max_n_tpb, const nbp_t::metadata_t* d_md, const var_t* d_y, const var_t* d_p, var_t* d_dy)
 {
     static bool first_call = true;
     static uint32_t n_last;
@@ -336,7 +336,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, uint2_t snk, uint2_t src, unsig
     {
         for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb / 2; n_tpb += 16)
         {
-            float elapsed_time = gpu_calc_grav_accel_naive(snk, src, n_tpb, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_naive(snk, src, n_tpb, start, stop, d_md, r, p, a);
             printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
             if (elapsed_time < result.y)
             {
@@ -349,7 +349,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, uint2_t snk, uint2_t src, unsig
     }
     else
     {
-        float elapsed_time = gpu_calc_grav_accel_naive(snk, src, opt_n_tpb, start, stop, r, p, a);
+        float elapsed_time = gpu_calc_grav_accel_naive(snk, src, opt_n_tpb, start, stop, d_md, r, p, a);
         result.x = (float)opt_n_tpb;
         result.y = elapsed_time;  // [ms]
     }
@@ -361,7 +361,7 @@ float2 gpu_calc_grav_accel_naive(uint32_t n_obj, uint2_t snk, uint2_t src, unsig
     return result;
 }
 
-float2 gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
+float2 gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int max_n_tpb, const nbp_t::metadata_t* d_md, const var_t* d_y, const var_t* d_p, var_t* d_dy)
 {
     static bool first_call = true;
     static uint32_t n_last;
@@ -391,7 +391,7 @@ float2 gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int max_n_tpb, const va
     {
         for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb / 2; n_tpb += 16)
         {
-            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, n_tpb, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_tile(n_obj, n_tpb, start, stop, d_md, r, p, a);
             printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
             if (elapsed_time < result.y)
             {
@@ -404,7 +404,7 @@ float2 gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int max_n_tpb, const va
     }
     else
     {
-        float elapsed_time = gpu_calc_grav_accel_tile(n_obj, opt_n_tpb, start, stop, r, p, a);
+        float elapsed_time = gpu_calc_grav_accel_tile(n_obj, opt_n_tpb, start, stop, d_md, r, p, a);
         result.x = (float)opt_n_tpb;
         result.y = elapsed_time;
     }
@@ -416,7 +416,7 @@ float2 gpu_calc_grav_accel_tile(uint32_t n_obj, unsigned int max_n_tpb, const va
     return result;
 }
 
-float2 gpu_calc_grav_accel_tile(uint32_t n_obj, uint2_t snk, uint2_t src, unsigned int max_n_tpb, const var_t* d_y, const var_t* d_p, var_t* d_dy)
+float2 gpu_calc_grav_accel_tile(uint32_t n_obj, uint2_t snk, uint2_t src, unsigned int max_n_tpb, const nbp_t::metadata_t* d_md, const var_t* d_y, const var_t* d_p, var_t* d_dy)
 {
     static bool first_call = true;
     static uint32_t n_last;
@@ -446,7 +446,7 @@ float2 gpu_calc_grav_accel_tile(uint32_t n_obj, uint2_t snk, uint2_t src, unsign
     {
         for (unsigned int n_tpb = 16; n_tpb <= max_n_tpb / 2; n_tpb += 16)
         {
-            float elapsed_time = gpu_calc_grav_accel_tile(snk, src, n_tpb, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_tile(snk, src, n_tpb, start, stop, d_md, r, p, a);
             printf("    %4d %12.4e [sec]\n", n_tpb, elapsed_time / 1.0e3);
             if (elapsed_time < result.y)
             {
@@ -459,7 +459,7 @@ float2 gpu_calc_grav_accel_tile(uint32_t n_obj, uint2_t snk, uint2_t src, unsign
     }
     else
     {
-        float elapsed_time = gpu_calc_grav_accel_tile(snk, src, opt_n_tpb, start, stop, r, p, a);
+        float elapsed_time = gpu_calc_grav_accel_tile(snk, src, opt_n_tpb, start, stop, d_md, r, p, a);
         result.x = (float)opt_n_tpb;
         result.y = elapsed_time;  // [ms]
     }
@@ -471,7 +471,7 @@ float2 gpu_calc_grav_accel_tile(uint32_t n_obj, uint2_t snk, uint2_t src, unsign
     return result;
 }
 
-void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_p, var_t* d_dy, ofstream& o_result)
+void benchmark_GPU(int id_dev, uint32_t n_obj, const nbp_t::metadata_t* d_md, const var_t* d_y, const var_t* d_p, var_t* d_dy, ofstream& o_result)
 {
     static string method_name[] = { "base", "base_with_sym", "tile", "tile_advanced" };
     static string param_name[] = { "n_body", "snk_src" };
@@ -484,7 +484,7 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     CUDA_SAFE_CALL(cudaGetDeviceProperties(&deviceProp, id_dev));
 
     // 1. Naive method on the GPU with n_obj parameter
-    float2 result = gpu_calc_grav_accel_naive(n_obj, deviceProp.maxThreadsPerBlock, d_y, d_p, d_dy);
+    float2 result = gpu_calc_grav_accel_naive(n_obj, deviceProp.maxThreadsPerBlock, d_md, d_y, d_p, d_dy);
     unsigned int n_tpb = (unsigned int)result.x;
     var_t Dt_GPU = result.y;   // [ms]
 
@@ -493,14 +493,14 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     // 2. Naive method on the GPU with snk and src parameters
     snk.n2 = n_obj;
     src.n2 = n_obj;
-    result = gpu_calc_grav_accel_naive(n_obj, snk, src, deviceProp.maxThreadsPerBlock, d_y, d_p, d_dy);
+    result = gpu_calc_grav_accel_naive(n_obj, snk, src, deviceProp.maxThreadsPerBlock, d_md, d_y, d_p, d_dy);
     n_tpb = (unsigned int)result.x;
     Dt_GPU = result.y;   // [ms]
 
     print(PROC_UNIT_GPU, method_name[0], param_name[1], snk, src, n_obj, n_tpb, Dt_CPU, Dt_GPU, o_result, true);
 
     // 3. Tile method on the GPU with n_obj parameter
-    result = gpu_calc_grav_accel_tile(n_obj, deviceProp.maxThreadsPerBlock, d_y, d_p, d_dy);
+    result = gpu_calc_grav_accel_tile(n_obj, deviceProp.maxThreadsPerBlock, d_md, d_y, d_p, d_dy);
     n_tpb = (unsigned int)result.x;
     Dt_GPU = result.y;   // [ms]
 
@@ -511,7 +511,7 @@ void benchmark_GPU(int id_dev, uint32_t n_obj, const var_t* d_y, const var_t* d_
     // 4. Tile method on the GPU with snk and src parameters
     snk.n2 = n_obj;
     src.n2 = n_obj;
-    result = gpu_calc_grav_accel_tile(n_obj, snk, src, deviceProp.maxThreadsPerBlock, d_y, d_p, d_dy);
+    result = gpu_calc_grav_accel_tile(n_obj, snk, src, deviceProp.maxThreadsPerBlock, d_md, d_y, d_p, d_dy);
     n_tpb = (unsigned int)result.x;
     Dt_GPU = result.y;   // [ms]
 

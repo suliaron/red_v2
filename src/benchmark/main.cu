@@ -51,16 +51,7 @@ void benchmark(option& opt, ofstream& o_result)
         {
             allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
             populate(seed, i, h_y, h_p, h_md);
-            benchmark_CPU(i, h_y, h_p, h_dy, o_result);
-            deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
-        }
-        for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
-        {
-            allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
-            populate(seed, i, h_y, h_p, h_md);
-            uint2_t snk = { 0, i };
-            uint2_t src = { 0, i };
-            benchmark_CPU(i, snk, src, h_y, h_p, h_dy, o_result);
+            benchmark_CPU(i, h_md, h_y, h_p, h_dy, o_result);
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
         }
     }
@@ -89,7 +80,7 @@ void benchmark(option& opt, ofstream& o_result)
             redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
             redutil2::copy_vector_to_device(d_md, h_md, i * sizeof(nbp_t::metadata_t));
 
-            benchmark_GPU(opt.id_dev, i, d_y, d_p, d_dy, o_result);
+            benchmark_GPU(opt.id_dev, i, d_md, d_y, d_p, d_dy, o_result);
 
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
             deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
@@ -141,7 +132,7 @@ void compare(option& opt)
 #else
         uint64_t t0 = redutil2::GetTimeMs64();
 #endif
-        cpu_calc_grav_accel(n_obj, r, p, a1, false);
+        cpu_calc_grav_accel(n_obj, h_md, r, p, a1, false);
 #ifdef _WIN32
         chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
         chrono::duration<var_t> total_time = t1 - t0;
@@ -157,7 +148,7 @@ void compare(option& opt)
 #else
         t0 = redutil2::GetTimeMs64();
 #endif
-        cpu_calc_grav_accel(n_obj, r, p, a2, true);
+        cpu_calc_grav_accel(n_obj, h_md, r, p, a2, true);
 #ifdef _WIN32
         t1 = chrono::system_clock::now();
         total_time = t1 - t0;
@@ -184,7 +175,7 @@ void compare(option& opt)
 #else
         t0 = redutil2::GetTimeMs64();
 #endif
-        cpu_calc_grav_accel(snk, src, r, p, a1, false);
+        cpu_calc_grav_accel(snk, src, h_md, r, p, a1, false);
 #ifdef _WIN32
         t1 = chrono::system_clock::now();
         total_time = t1 - t0;
@@ -200,7 +191,7 @@ void compare(option& opt)
 #else
         t0 = redutil2::GetTimeMs64();
 #endif
-        cpu_calc_grav_accel(snk, src, r, p, a2, true);
+        cpu_calc_grav_accel(snk, src, h_md, r, p, a2, true);
 #ifdef _WIN32
         t1 = chrono::system_clock::now();
         total_time = t1 - t0;
@@ -250,7 +241,7 @@ void compare(option& opt)
             var3_t* a1 = (var3_t*)(h_dy1 + nv);
             memset(a1, 0, n_obj * sizeof(var3_t));
 
-            cpu_calc_grav_accel(n_obj, r, p, a1, true);
+            cpu_calc_grav_accel(n_obj, h_md, r, p, a1, true);
         }
         {
             // Create aliases
@@ -262,13 +253,13 @@ void compare(option& opt)
 
             uint2_t snk = { 0, n_obj };
             uint2_t src = { 0, n_obj };
-            float elapsed_time = gpu_calc_grav_accel_naive(snk, src, 256, start, stop, r, p, a);
+            float elapsed_time = gpu_calc_grav_accel_naive(snk, src, 256, start, stop, d_md, r, p, a);
 
-            //float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
+            //float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, d_md, r, p, a);
 
             //uint2_t snk = { 0, n_obj };
             //uint2_t src = { 0, n_obj };
-            //float elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, r, p, a);
+            //float elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, d_md, r, p, a);
 
             redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
             printf("The GPU computation took: %10.6f [ms]\n", elapsed_time);
@@ -333,7 +324,7 @@ void compare_part(option& opt, uint2_t snk, uint2_t src)
 #else
         uint64_t t0 = redutil2::GetTimeMs64();
 #endif
-        cpu_calc_grav_accel(snk, src, r, p, a1, false);
+        cpu_calc_grav_accel(snk, src, h_md, r, p, a1, false);
 #ifdef _WIN32
         chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
         chrono::duration<var_t> total_time = t1 - t0;
@@ -355,7 +346,7 @@ void compare_part(option& opt, uint2_t snk, uint2_t src)
         var3_t* a = (var3_t*)(d_dy + nv);
         cudaMemset(a, 0, n_obj * sizeof(var3_t));
 
-        float elapsed_time = gpu_calc_grav_accel_naive(snk, src, 256, start, stop, r, p, a);
+        float elapsed_time = gpu_calc_grav_accel_naive(snk, src, 256, start, stop, d_md, r, p, a);
 
         //float elapsed_time = gpu_calc_grav_accel_tile(n_obj, 256, start, stop, r, p, a);
 
@@ -437,17 +428,17 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
         // 1. Compute the acceleration for the SI bodies:
         snk.n1 = 0, snk.n2 = n_si;
         src.n1 = 0, src.n2 = n_si + n_nsi;
-        cpu_calc_grav_accel(snk, src, r, p, a, false);
+        cpu_calc_grav_accel(snk, src, h_md, r, p, a, false);
 
         // 2. Compute the acceleration for the NSI bodies:
         snk.n1 = n_si, snk.n2 = n_si + n_nsi;
         src.n1 = 0, src.n2 = n_si;
-        cpu_calc_grav_accel(snk, src, r, p, a, false);
+        cpu_calc_grav_accel(snk, src, h_md, r, p, a, false);
 
         // 3. Compute the acceleration for the NI bodies:
         snk.n1 = n_si + n_nsi, snk.n2 = n_obj;
         src.n1 = 0, src.n2 = n_si + n_nsi;
-        cpu_calc_grav_accel(snk, src, r, p, a, false);
+        cpu_calc_grav_accel(snk, src, h_md, r, p, a, false);
 
 #ifdef _WIN32
         chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
@@ -477,7 +468,7 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
         if (0 != (snk.n2 - snk.n1) * (src.n2 - src.n1))
         {
             //elapsed_time = gpu_calc_grav_accel_naive(snk, src, 256, start, stop, r, p, a);
-            elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, r, p, a);
+            elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, d_md, r, p, a);
         }
 
         // 2. Compute the acceleration for the NSI bodies:
@@ -486,7 +477,7 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
         if (0 != (snk.n2 - snk.n1) * (src.n2 - src.n1))
         {
             //elapsed_time += gpu_calc_grav_accel_naive(snk, src, 256, start, stop, r, p, a);
-            elapsed_time += gpu_calc_grav_accel_tile(snk, src, 256, start, stop, r, p, a);
+            elapsed_time += gpu_calc_grav_accel_tile(snk, src, 256, start, stop, d_md, r, p, a);
         }
 
         // 3. Compute the acceleration for the NI bodies:
@@ -495,7 +486,7 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
         if (0 != (snk.n2 - snk.n1) * (src.n2 - src.n1))
         {
             //elapsed_time += gpu_calc_grav_accel_naive(snk, src, 256, start, stop, r, p, a);
-            elapsed_time += gpu_calc_grav_accel_tile(snk, src, 256, start, stop, r, p, a);
+            elapsed_time += gpu_calc_grav_accel_tile(snk, src, 256, start, stop, d_md, r, p, a);
         }
 
         redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));

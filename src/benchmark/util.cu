@@ -129,6 +129,39 @@ void deallocate_device_storage(var_t** d_y, var_t** d_a, var_t** d_p, nbp_t::met
     FREE_DEVICE_VECTOR((void **)(d_md));
 }
 
+void populate(uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md)
+{
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+
+    // Create aliases
+    var3_t* r = (var3_t*)h_y;
+    var3_t* v = (var3_t*)(h_y + nv);
+    nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
+    for (uint32_t i = 0; i < n_obj; i++)
+    {
+        r[i].x = i;     // [AU]
+        r[i].y = i;
+        r[i].z = i;
+
+        v[i].y = i;  // [AU/day]
+        v[i].z = i;
+        v[i].x = i;
+
+        p[i].mass = i + 1.0;  // [solar mass]
+        p[i].density = (1.0 + 2.0 * ((var_t)rand() / RAND_MAX)) * constants::GramPerCm3ToSolarPerAu3;
+        p[i].radius = tools::calc_radius(p[i].mass, p[i].density);
+
+        h_md[i].active = true;
+        h_md[i].body_type = BODY_TYPE_STAR;
+        h_md[i].id = i + 1;
+        h_md[i].mig_stop_at = 0.0;
+        h_md[i].mig_type = MIGRATION_TYPE_NO;
+        h_md[i].unused1 = h_md[i].unused2 = h_md[i].unused3 = false;
+    }
+}
+
 void populate(uint32_t seed, uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md)
 {
     // Number of space and velocity coordinates
@@ -235,39 +268,6 @@ void populate(uint32_t seed, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni, var_t
 
         h_md[i].active = true;
         h_md[i].body_type = BODY_TYPE_TESTPARTICLE;
-        h_md[i].id = i + 1;
-        h_md[i].mig_stop_at = 0.0;
-        h_md[i].mig_type = MIGRATION_TYPE_NO;
-        h_md[i].unused1 = h_md[i].unused2 = h_md[i].unused3 = false;
-    }
-}
-
-void populate(uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md)
-{
-    // Number of space and velocity coordinates
-    const uint32_t nv = NDIM * n_obj;
-
-    // Create aliases
-    var3_t* r = (var3_t*)h_y;
-    var3_t* v = (var3_t*)(h_y + nv);
-    nbp_t::param_t* p = (nbp_t::param_t*)h_p;
-
-    for (uint32_t i = 0; i < n_obj; i++)
-    {
-        r[i].x = i;     // [AU]
-        r[i].y = i;
-        r[i].z = i;
-
-        v[i].y = i;  // [AU/day]
-        v[i].z = i;
-        v[i].x = i;
-
-        p[i].mass = i + 1.0;  // [solar mass]
-        p[i].density = (1.0 + 2.0 * ((var_t)rand() / RAND_MAX)) * constants::GramPerCm3ToSolarPerAu3;
-        p[i].radius = tools::calc_radius(p[i].mass, p[i].density);
-
-        h_md[i].active = true;
-        h_md[i].body_type = BODY_TYPE_STAR;
         h_md[i].id = i + 1;
         h_md[i].mig_stop_at = 0.0;
         h_md[i].mig_type = MIGRATION_TYPE_NO;
