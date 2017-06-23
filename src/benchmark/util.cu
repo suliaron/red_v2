@@ -131,8 +131,6 @@ void deallocate_device_storage(var_t** d_y, var_t** d_a, var_t** d_p, nbp_t::met
 
 void populate(uint32_t seed, uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md)
 {
-    srand(seed);
-
     // Number of space and velocity coordinates
     const uint32_t nv = NDIM * n_obj;
 
@@ -141,6 +139,7 @@ void populate(uint32_t seed, uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::meta
     var3_t* v = (var3_t*)(h_y + nv);
     nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
+    srand(seed);
     for (uint32_t i = 0; i < n_obj; i++)
     {
         r[i].x = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;     // [AU]
@@ -157,6 +156,85 @@ void populate(uint32_t seed, uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::meta
 
         h_md[i].active = true;
         h_md[i].body_type = BODY_TYPE_STAR;
+        h_md[i].id = i + 1;
+        h_md[i].mig_stop_at = 0.0;
+        h_md[i].mig_type = MIGRATION_TYPE_NO;
+        h_md[i].unused1 = h_md[i].unused2 = h_md[i].unused3 = false;
+    }
+}
+
+void populate(uint32_t seed, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md)
+{
+    const uint32_t n_obj = n_si + n_nsi + n_ni;
+    // Number of space and velocity coordinates
+    const uint32_t nv = NDIM * n_obj;
+
+    // Create aliases
+    var3_t* r = (var3_t*)h_y;
+    var3_t* v = (var3_t*)(h_y + nv);
+    nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+
+    srand(seed);
+    for (uint32_t i = 0; i < n_si; i++)
+    {
+        r[i].x = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;     // [AU]
+        r[i].y = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;
+        r[i].z = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;
+
+        v[i].y = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;  // [AU/day]
+        v[i].z = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;
+        v[i].x = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;
+
+        p[i].mass = ((var_t)rand() / RAND_MAX);  // [solar mass]
+        p[i].density = (1.0 + 2.0 * ((var_t)rand() / RAND_MAX)) * constants::GramPerCm3ToSolarPerAu3;
+        p[i].radius = tools::calc_radius(p[i].mass, p[i].density);
+
+        h_md[i].active = true;
+        h_md[i].body_type = BODY_TYPE_STAR;
+        h_md[i].id = i + 1;
+        h_md[i].mig_stop_at = 0.0;
+        h_md[i].mig_type = MIGRATION_TYPE_NO;
+        h_md[i].unused1 = h_md[i].unused2 = h_md[i].unused3 = false;
+    }
+
+    for (uint32_t i = n_si; i < n_si + n_nsi; i++)
+    {
+        r[i].x = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;     // [AU]
+        r[i].y = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;
+        r[i].z = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;
+
+        v[i].y = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;  // [AU/day]
+        v[i].z = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;
+        v[i].x = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;
+
+        p[i].mass = ((var_t)rand() / RAND_MAX);  // [solar mass]
+        p[i].density = (1.0 + 2.0 * ((var_t)rand() / RAND_MAX)) * constants::GramPerCm3ToSolarPerAu3;
+        p[i].radius = tools::calc_radius(p[i].mass, p[i].density);
+
+        h_md[i].active = true;
+        h_md[i].body_type = BODY_TYPE_PLANETESIMAL;
+        h_md[i].id = i + 1;
+        h_md[i].mig_stop_at = 0.0;
+        h_md[i].mig_type = MIGRATION_TYPE_NO;
+        h_md[i].unused1 = h_md[i].unused2 = h_md[i].unused3 = false;
+    }
+
+    for (uint32_t i = n_si + n_nsi; i < n_obj; i++)
+    {
+        r[i].x = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;     // [AU]
+        r[i].y = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;
+        r[i].z = -50.0 + ((var_t)rand() / RAND_MAX) * 100.0;
+
+        v[i].y = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;  // [AU/day]
+        v[i].z = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;
+        v[i].x = -1.0e-2 + ((var_t)rand() / RAND_MAX) * 2.0e-2;
+
+        p[i].mass = 0.0;  // [solar mass]
+        p[i].density = 0.0;
+        p[i].radius = 0.0;
+
+        h_md[i].active = true;
+        h_md[i].body_type = BODY_TYPE_TESTPARTICLE;
         h_md[i].id = i + 1;
         h_md[i].mig_stop_at = 0.0;
         h_md[i].mig_type = MIGRATION_TYPE_NO;
@@ -297,6 +375,33 @@ int parse_options(int argc, const char **argv, option_t& opt, bool& verbose)
             }
             opt.n_iter = atoi(argv[i]);
         }
+        else if (p == "-n_si")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.n_si = atoi(argv[i]);
+        }
+        else if (p == "-n_nsi")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.n_nsi = atoi(argv[i]);
+        }
+        else if (p == "-n_ni")
+        {
+            i++;
+            if (!tools::is_number(argv[i]))
+            {
+                throw string("Invalid number at: " + p);
+            }
+            opt.n_ni = atoi(argv[i]);
+        }
         else if (p == "-v" || p == "--verbose")
         {
             verbose = true;
@@ -362,4 +467,7 @@ void create_default_option(option_t& opt)
     opt.n_iter = 10;
     opt.o_dir = "";
     opt.tol = 1.0e-16;
+    opt.n_ni = 0;
+    opt.n_nsi = 0;
+    opt.n_si = 0;
 }

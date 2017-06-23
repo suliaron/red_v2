@@ -53,7 +53,7 @@ void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, var_t mj
     aj.z -= s * r_ij.z;
 }
 
-void cpu_calc_grav_accel(var_t t, uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a, bool use_sym)
+void cpu_calc_grav_accel(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a, bool use_sym)
 {
     if (use_sym)
     {
@@ -78,7 +78,7 @@ void cpu_calc_grav_accel(var_t t, uint32_t n_obj, const var3_t* r, const nbp_t::
     }
 }
 
-void cpu_calc_grav_accel(var_t t, uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a, bool use_sym)
+void cpu_calc_grav_accel(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a, bool use_sym)
 {
     if (use_sym)
     {
@@ -133,34 +133,34 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     {
         for (i = 0; i < 1000; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, false);
+            cpu_calc_grav_accel(n_obj, r, p, a, false);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 50; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, false);
+            cpu_calc_grav_accel(n_obj, r, p, a, false);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
         for (i = 0; i < 5; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, false);
+            cpu_calc_grav_accel(n_obj, r, p, a, false);
         }
     }
     else
     {
-        cpu_calc_grav_accel(t, n_obj, r, p, a, false);
+        cpu_calc_grav_accel(n_obj, r, p, a, false);
     }
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
     chrono::duration<var_t> total_time = t1 - t0;
-    var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+    var_t Dt_CPU = (total_time.count() / (var_t)(i == 0 ? 1 : i)) * 1.0e3; // [ms]
 #else
     uint64_t t1 = redutil2::GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
 #endif
 
     print(PROC_UNIT_CPU, method_name[0], param_name[0], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
@@ -176,34 +176,34 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     {
         for (i = 0; i < 1000; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, true);
+            cpu_calc_grav_accel(n_obj, r, p, a, true);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 50; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, true);
+            cpu_calc_grav_accel(n_obj, r, p, a, true);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
         for (i = 0; i < 5; i++)
         {
-            cpu_calc_grav_accel(t, n_obj, r, p, a, true);
+            cpu_calc_grav_accel(n_obj, r, p, a, true);
         }
     }
     else
     {
-        cpu_calc_grav_accel(t, n_obj, r, p, a, true);
+        cpu_calc_grav_accel(n_obj, r, p, a, true);
     }
 #ifdef _WIN32
     t1 = chrono::system_clock::now();
     total_time = t1 - t0;
-    Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+    Dt_CPU = (total_time.count() / (var_t)(i == 0 ? 1 : i)) * 1.0e3; // [ms]
 #else
-    t1 = redutil2::GetTimeMs64();
-    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
+    uint64_t t1 = redutil2::GetTimeMs64();
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
 #endif
 
     print(PROC_UNIT_CPU, method_name[1], param_name[0], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
@@ -237,34 +237,34 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     {
         for (i = 0; i < 1000; i++)
         {
-            cpu_calc_grav_accel(t, snk, src, r, p, a, false);
+            cpu_calc_grav_accel(snk, src, r, p, a, false);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 50; i++)
         {
-            cpu_calc_grav_accel(t, snk, src, r, p, a, false);
+            cpu_calc_grav_accel(snk, src, r, p, a, false);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
         for (i = 0; i < 5; i++)
         {
-            cpu_calc_grav_accel(t, snk, src, r, p, a, false);
+            cpu_calc_grav_accel(snk, src, r, p, a, false);
         }
     }
     else
     {
-        cpu_calc_grav_accel(t, snk, src, r, p, a, false);
+        cpu_calc_grav_accel(snk, src, r, p, a, false);
     }
 #ifdef _WIN32
     chrono::time_point<chrono::system_clock> t1 = chrono::system_clock::now();
     chrono::duration<var_t> total_time = t1 - t0;
-    var_t Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+    var_t Dt_CPU = (total_time.count() / (var_t)(i == 0 ? 1 : i)) * 1.0e3; // [ms]
 #else
     uint64_t t1 = redutil2::GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
 #endif
 
     print(PROC_UNIT_CPU, method_name[0], param_name[1], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
@@ -280,34 +280,34 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     {
         for (i = 0; i < 1000; i++)
         {
-            cpu_calc_grav_accel(t, snk, src, r, p, a, true);
+            cpu_calc_grav_accel(snk, src, r, p, a, true);
         }
     }
     else if (100 < n_obj && 1000 >= n_obj)
     {
         for (i = 0; i < 50; i++)
         {
-            cpu_calc_grav_accel(t, snk, src, r, p, a, true);
+            cpu_calc_grav_accel(snk, src, r, p, a, true);
         }
     }
     else if (1000 < n_obj && 10000 >= n_obj)
     {
         for (i = 0; i < 5; i++)
         {
-            cpu_calc_grav_accel(t, snk, src, r, p, a, true);
+            cpu_calc_grav_accel(snk, src, r, p, a, true);
         }
     }
     else
     {
-        cpu_calc_grav_accel(t, snk, src, r, p, a, true);
+        cpu_calc_grav_accel(snk, src, r, p, a, true);
     }
 #ifdef _WIN32
     t1 = chrono::system_clock::now();
     total_time = t1 - t0;
-    Dt_CPU = total_time.count() / (var_t)(i == 0 ? 1 : i);
+    Dt_CPU = (total_time.count() / (var_t)(i == 0 ? 1 : i)) * 1.0e3; // [ms]
 #else
-    t1 = redutil2::GetTimeMs64();
-    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e6;  // [sec]
+    uint64_t t1 = redutil2::GetTimeMs64();
+    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
 #endif
 
     print(PROC_UNIT_CPU, method_name[1], param_name[1], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
