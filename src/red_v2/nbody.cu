@@ -50,7 +50,7 @@ namespace kernel_nbody
             for (uint32_t j = 0; j < n_obj; j++)
             {
                 if (i == j) continue;
-                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
             }
         }
     } /* calc_grav_accel_naive () */
@@ -67,7 +67,7 @@ namespace kernel_nbody
             for (uint32_t j = src.n1; j < src.n2; j++)
             {
                 if (i == j) continue;
-                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
             }
         }
     } /* calc_grav_accel_naive () */
