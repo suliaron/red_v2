@@ -118,7 +118,6 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
 
     uint2_t snk = { 0, 0 };
     uint2_t src = { 0, 0 };
-    var_t t = 0.0;
     int i = 0;
 
     var_t Dt_GPU = 0.0;
@@ -202,8 +201,8 @@ void benchmark_CPU(uint32_t n_obj, const var_t* h_y, const var_t* h_p, var_t* h_
     total_time = t1 - t0;
     Dt_CPU = (total_time.count() / (var_t)(i == 0 ? 1 : i)) * 1.0e3; // [ms]
 #else
-    uint64_t t1 = redutil2::GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
+    t1 = redutil2::GetTimeMs64();
+    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
 #endif
 
     print(PROC_UNIT_CPU, method_name[1], param_name[0], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
@@ -222,7 +221,6 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
     var3_t* a = (var3_t*)(h_dy + nv);
 
-    var_t t = 0.0;
     int i = 0;
 
     var_t Dt_GPU = 0.0;
@@ -306,8 +304,8 @@ void benchmark_CPU(uint32_t n_obj, uint2_t snk, uint2_t src, const var_t* h_y, c
     total_time = t1 - t0;
     Dt_CPU = (total_time.count() / (var_t)(i == 0 ? 1 : i)) * 1.0e3; // [ms]
 #else
-    uint64_t t1 = redutil2::GetTimeMs64();
-    var_t Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
+    t1 = redutil2::GetTimeMs64();
+    Dt_CPU = ((var_t)(t1 - t0)) / (var_t)(i == 0 ? 1 : i) / 1.0e3;   // [ms]
 #endif
 
     print(PROC_UNIT_CPU, method_name[1], param_name[1], snk, src, n_obj, 1, Dt_CPU, Dt_GPU, o_result, true);
