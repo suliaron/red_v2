@@ -84,5 +84,7 @@ private:
     void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, var_t mj, var3_t& ai, var3_t& aj);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
+    float gpu_calc_grav_accel_naive(uint16_t stage, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a);
+
 	nbp_t::metadata_t *h_md, *d_md, *md;
 };

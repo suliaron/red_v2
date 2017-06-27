@@ -44,13 +44,6 @@ namespace kernel_nbody
         // i is the index of the SINK body
         const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
-        //if (0 == threadIdx.x)
-        //{
-        //    printf("n_obj = %3u\n", n_obj);
-        //}
-        //printf("i = %3u\n", i);
-        //__syncthreads();
-
         if (i < n_obj)
         {
             // j is the index of the SOURCE body
@@ -170,50 +163,6 @@ namespace kernel_nbody
             a[i] = acc;
         }
     }
-
-
-//    __global__
-//void calc_grav_accel_naive
-//	(
-//		uint32_t n_obj, 
-//		const nbp_t::metadata_t* md,
-//		const nbp_t::param_t* p, 
-//		const var3_t* r, 
-//		var3_t* a
-//	)
-//{
-//	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
-//
-//	if (i < n_obj)
-//	{
-//		a[i].x = a[i].y = a[i].z = 0.0;
-//		var3_t r_ij = {0, 0, 0};
-//		for (uint32_t j = 0; j < n_obj; j++) 
-//		{
-//			/* Skip the body with the same index */
-//			if (i == j)
-//			{
-//				continue;
-//			}
-//			// 3 FLOP
-//			r_ij.x = r[j].x - r[i].x;
-//			r_ij.y = r[j].y - r[i].y;
-//			r_ij.z = r[j].z - r[i].z;
-//			// 5 FLOP
-//			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);	// = r2
-//			// 20 FLOP
-//			var_t d = sqrt(d2);								    // = r
-//			// 2 FLOP
-//			var_t s = p[j].mass / (d*d2);
-//			// 6 FLOP
-//			a[i].x += s * r_ij.x;
-//			a[i].y += s * r_ij.y;
-//			a[i].z += s * r_ij.z;
-//		} // 36 FLOP
-//		a[i].x *= K2;
-//		a[i].y *= K2;
-//		a[i].z *= K2;
-//	}
 } /* kernel_nbody */
 
 nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev) :
@@ -412,27 +361,7 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 		for (uint32_t j = i+1; j < n_obj; j++)
 		{
             body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
-            //r_ij.x = r[j].x - r[i].x;
-            //r_ij.y = r[j].y - r[i].y;
-            //r_ij.z = r[j].z - r[i].z;
-
-            //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-            //var_t d = sqrt(d2);
-            //var_t d_3 = 1.0 / (d*d2);
-
-            //var_t s = p[j].mass * d_3;
-            //a[i].x += s * r_ij.x;
-            //a[i].y += s * r_ij.y;
-            //a[i].z += s * r_ij.z;
-
-            //s = p[i].mass * d_3;
-            //a[j].x -= s * r_ij.x;
-            //a[j].y -= s * r_ij.y;
-            //a[j].z -= s * r_ij.z;
 		}
-		//a[i].x *= K2;
-		//a[i].y *= K2;
-		//a[i].z *= K2;
 	}
 }
 
@@ -460,6 +389,9 @@ void nbody::body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, v
 
 void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
+    static bool first_call = true;
+    static uint32_t last_n_obj = n_obj;
+
     // Number of space and velocity coordinates
     const uint32_t nv = NDIM * n_obj;
 
@@ -470,19 +402,65 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 
     var3_t* a = (var3_t*)(dy + nv);
 
-    // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
-    // Copy the velocities into dy
-    CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
-
     // TODO: do a benchmark and set the optimal thread number
+    if (first_call || last_n_obj != n_obj)
 	{
-		n_tpb = 256;
-	}
-	set_kernel_launch_param(n_obj, n_tpb, grid, block);
+        printf("Searching for the optimal thread number ");
+        first_call = false;
+        last_n_obj = n_obj;
 
-    cudaMemset(a, 0, n_obj * sizeof(var3_t));
-    kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, r, p, a);
-	CUDA_CHECK_ERROR();
+        float min_dt = 1.0e10;
+        for (unsigned int i = 16; i < 512; i += 16)
+        {
+            putc('.', stdout);
+            cudaMemset(a, 0, n_obj * sizeof(var3_t));
+            float dt_GPU = gpu_calc_grav_accel_naive(stage, i, curr_t, r, p, a);
+            if (dt_GPU < min_dt)
+            {
+                min_dt = dt_GPU;
+                n_tpb = i;
+            }
+        }
+        printf(" Done.\nOptimal thread number = %3d.\n", n_tpb);
+        // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
+        // Copy the velocities into dy
+        CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
+
+    }
+    else
+    {
+        set_kernel_launch_param(n_obj, n_tpb, grid, block);
+
+        cudaMemset(a, 0, n_obj * sizeof(var3_t));
+        kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
+        // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
+        // Copy the velocities into dy
+        CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
+
+        CUDA_CHECK_ERROR();
+    }
+}
+
+float nbody::gpu_calc_grav_accel_naive(uint16_t stage, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+{
+    cudaEvent_t start, stop;
+
+    CUDA_SAFE_CALL(cudaEventCreate(&start));
+    CUDA_SAFE_CALL(cudaEventCreate(&stop));
+
+    set_kernel_launch_param(n_obj, n_tpb, grid, block);
+    CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+    kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
+    CUDA_CHECK_ERROR();
+
+    CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
+    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+
+    // Computes the elapsed time between two events in milliseconds with a resolution of around 0.5 microseconds.
+    float elapsed_time = 0.0f;
+    CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, start, stop));
+
+    return elapsed_time;
 }
 
 void nbody::calc_integral()
