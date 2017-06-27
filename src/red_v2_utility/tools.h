@@ -63,7 +63,6 @@ namespace redutil2
         std::string& trim_comment(std::string& s, const char* c);
 
 		std::string get_time_stamp();
-		std::string convert_time_t(time_t t);
         std::string convert_var_t(var_t v);
 
 		void populate_data(uint32_t* n_bodies, pp_disk_t::sim_data_t *sim_data);

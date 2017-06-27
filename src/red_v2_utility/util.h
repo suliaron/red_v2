@@ -31,11 +31,11 @@ namespace redutil2
 
 	void free_host_vector(  void **ptr,           const char *file, int line);
 	void free_device_vector(void **ptr,           const char *file, int line);
-	void free_vector(       void **ptr, bool cpu, const char *file, int line);
+	//void free_vector(       void **ptr, bool cpu, const char *file, int line);
 
 	#define FREE_HOST_VECTOR(  ptr)      (free_host_vector(  ptr,      __FILE__, __LINE__))
 	#define FREE_DEVICE_VECTOR(ptr)      (free_device_vector(ptr,      __FILE__, __LINE__))
-	#define FREE_VECTOR(       ptr, cpu) (free_vector(       ptr, cpu, __FILE__, __LINE__))
+	//#define FREE_VECTOR(       ptr, cpu) (free_vector(       ptr, cpu, __FILE__, __LINE__))
 
 	void allocate_host_storage(pp_disk_t::sim_data_t *sd, int n);
 	void allocate_device_storage(pp_disk_t::sim_data_t *sd, int n);
@@ -51,7 +51,7 @@ namespace redutil2
 
 
 	void set_device(int id_of_target_dev, std::ostream& sout);
-	void print_array(std::string path, int n, var_t *data, mem_loc_t);
+	void print_array(std::string path, std::string comment, uint32_t n, var_t *data, mem_loc_t);
 
 	void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd);
 

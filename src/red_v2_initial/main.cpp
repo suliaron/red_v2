@@ -790,7 +790,7 @@ int parse_options(int argc, const char **argv, string &odir, string &filename, u
 		}
 		else
 		{
-			throw string("Invalid switch on command-line.");
+			throw string("Invalid switch (" + p + ") on command-line.");
 		}
 		i++;
 	}
@@ -912,8 +912,8 @@ int main(int argc, const char **argv)
         //model::rtbp2D::create(odir, filename);
 		//model::nbody::create(odir, filename, n_obj);
 		//model::nbody::create(odir, filename);               // The two-body problem
-        model::nbody::create_grav_focusing(odir, filename);
-        // model::nbody::ceate_disk(odir, filename, n_obj);
+        //model::nbody::create_grav_focusing(odir, filename);
+        model::nbody::ceate_disk(odir, filename, n_obj);
 	}
 	catch (const string& msg)
 	{

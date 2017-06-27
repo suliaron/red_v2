@@ -198,7 +198,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 #endif
 		f->dt = intgr->step();
 #ifdef _WIN32
-        Dt_CPU = (chrono::system_clock::now() - t0).count(); // [sec]
+        Dt_CPU = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - t0).count() / 1.0e3; // [sec]
 #else
         Dt_CPU = (var_t)(GetTimeMs64() - t0) / 1.0e6;        // [sec]
 #endif
@@ -308,7 +308,8 @@ int main(int argc, const char** argv, const char** env)
 		cerr << "ERROR: " << msg << endl;
 	}
 #ifdef _WIN32
-    var_t total_time = (chrono::system_clock::now() - start).count(); // [sec]
+    chrono::time_point<chrono::system_clock> stop = chrono::system_clock::now();
+    var_t total_time = chrono::duration_cast<chrono::milliseconds>(stop - start).count() * 1.0e-3; // [sec]
 #else
     var_t total_time = (var_t)(GetTimeMs64() - start) / 1.0e6;        // [sec]
 #endif

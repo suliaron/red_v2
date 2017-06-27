@@ -47,7 +47,7 @@ namespace kernel
             for (uint32_t j = 0; j < n_obj; j++)
             {
                 if (i == j) continue;
-                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
             }
         }
     } /* calc_grav_accel_naive () */
@@ -64,7 +64,7 @@ namespace kernel
             for (uint32_t j = src.n1; j < src.n2; j++)
             {
                 if (i == j) continue;
-                kernel::body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+                body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
             }
         }
     } /* calc_grav_accel_naive () */
@@ -75,7 +75,6 @@ namespace kernel
         extern __shared__ var3_t sh_pos[];
 
         const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
-        //var3_t acc = { 0.0, 0.0, 0.0 };
         var3_t acc = a[i];
         var3_t my_pos;
 
@@ -121,7 +120,6 @@ namespace kernel
         extern __shared__ var3_t sh_pos[];
 
         const uint32_t i = snk.n1 + blockIdx.x * blockDim.x + threadIdx.x;
-        //var3_t acc = { 0.0, 0.0, 0.0 };
         var3_t acc = a[i];
         var3_t my_pos;
 

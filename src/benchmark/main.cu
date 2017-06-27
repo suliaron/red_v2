@@ -50,6 +50,7 @@ void benchmark(option& opt, ofstream& o_result)
         for (uint32_t i = opt.n0; i <= opt.n1; i *= opt.dn)
         {
             allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
+            memset(h_dy, 0, i * NVPO * sizeof(var_t));
             populate(seed, i, h_y, h_p, h_md);
             benchmark_CPU(i, h_md, h_y, h_p, h_dy, o_result);
             deallocate_host_storage(&h_y, &h_dy, &h_p, &h_md);
@@ -75,6 +76,8 @@ void benchmark(option& opt, ofstream& o_result)
             allocate_host_storage(i, &h_y, &h_dy, &h_p, &h_md);
             populate(seed, i, h_y, h_p, h_md);
             allocate_device_storage(i, &d_y, &d_dy, &d_p, &d_md);
+            memset(h_dy, 0, i * NVPO * sizeof(var_t));
+            cudaMemset(d_dy, 0, i * NVPO * sizeof(var_t));
 
             redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
             redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));

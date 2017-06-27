@@ -39,10 +39,17 @@ namespace kernel_nbody
     } /* body_body_grav_accel() */
 
     __global__
-        void calc_grav_accel_naive(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_naive(uint32_t n_obj, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         // i is the index of the SINK body
         const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+
+        //if (0 == threadIdx.x)
+        //{
+        //    printf("n_obj = %3u\n", n_obj);
+        //}
+        //printf("i = %3u\n", i);
+        //__syncthreads();
 
         if (i < n_obj)
         {
@@ -56,7 +63,7 @@ namespace kernel_nbody
     } /* calc_grav_accel_naive () */
 
     __global__
-        void calc_grav_accel_naive(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_naive(uint2_t snk, uint2_t src, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         // i is the index of the SINK body
         const uint32_t i = snk.n1 + blockIdx.x * blockDim.x + threadIdx.x;
@@ -73,7 +80,7 @@ namespace kernel_nbody
     } /* calc_grav_accel_naive () */
 
     __global__
-        void calc_grav_accel_tile(uint32_t n_obj, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_tile(uint32_t n_obj, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
 
@@ -119,7 +126,7 @@ namespace kernel_nbody
     }
 
     __global__
-        void calc_grav_accel_tile(uint2_t snk, uint2_t src, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+        void calc_grav_accel_tile(uint2_t snk, uint2_t src, const nbp_t::metadata_t* md, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
     {
         extern __shared__ var3_t sh_pos[];
 
@@ -164,50 +171,49 @@ namespace kernel_nbody
         }
     }
 
-    
-    __global__
-void calc_grav_accel_naive
-	(
-		uint32_t n_obj, 
-		const nbp_t::metadata_t* bmd,
-		const nbp_t::param_t* p, 
-		const var3_t* r, 
-		var3_t* a
-	)
-{
-	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (i < n_obj)
-	{
-		a[i].x = a[i].y = a[i].z = 0.0;
-		var3_t r_ij = {0, 0, 0};
-		for (uint32_t j = 0; j < n_obj; j++) 
-		{
-			/* Skip the body with the same index */
-			if (i == j)
-			{
-				continue;
-			}
-			// 3 FLOP
-			r_ij.x = r[j].x - r[i].x;
-			r_ij.y = r[j].y - r[i].y;
-			r_ij.z = r[j].z - r[i].z;
-			// 5 FLOP
-			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);	// = r2
-			// 20 FLOP
-			var_t d = sqrt(d2);								    // = r
-			// 2 FLOP
-			var_t s = p[j].mass / (d*d2);
-			// 6 FLOP
-			a[i].x += s * r_ij.x;
-			a[i].y += s * r_ij.y;
-			a[i].z += s * r_ij.z;
-		} // 36 FLOP
-		a[i].x *= K2;
-		a[i].y *= K2;
-		a[i].z *= K2;
-	}
-}
+//    __global__
+//void calc_grav_accel_naive
+//	(
+//		uint32_t n_obj, 
+//		const nbp_t::metadata_t* md,
+//		const nbp_t::param_t* p, 
+//		const var3_t* r, 
+//		var3_t* a
+//	)
+//{
+//	const uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
+//
+//	if (i < n_obj)
+//	{
+//		a[i].x = a[i].y = a[i].z = 0.0;
+//		var3_t r_ij = {0, 0, 0};
+//		for (uint32_t j = 0; j < n_obj; j++) 
+//		{
+//			/* Skip the body with the same index */
+//			if (i == j)
+//			{
+//				continue;
+//			}
+//			// 3 FLOP
+//			r_ij.x = r[j].x - r[i].x;
+//			r_ij.y = r[j].y - r[i].y;
+//			r_ij.z = r[j].z - r[i].z;
+//			// 5 FLOP
+//			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);	// = r2
+//			// 20 FLOP
+//			var_t d = sqrt(d2);								    // = r
+//			// 2 FLOP
+//			var_t s = p[j].mass / (d*d2);
+//			// 6 FLOP
+//			a[i].x += s * r_ij.x;
+//			a[i].y += s * r_ij.y;
+//			a[i].z += s * r_ij.z;
+//		} // 36 FLOP
+//		a[i].x *= K2;
+//		a[i].y *= K2;
+//		a[i].z *= K2;
+//	}
 } /* kernel_nbody */
 
 nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, comp_dev_t comp_dev) :
@@ -402,32 +408,54 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 	memset(a, 0, nv *sizeof(var_t));
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
-		var3_t r_ij = {0, 0, 0};
+		//var3_t r_ij = {0, 0, 0};
 		for (uint32_t j = i+1; j < n_obj; j++)
 		{
-			r_ij.x = r[j].x - r[i].x;
-			r_ij.y = r[j].y - r[i].y;
-			r_ij.z = r[j].z - r[i].z;
+            body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
+            //r_ij.x = r[j].x - r[i].x;
+            //r_ij.y = r[j].y - r[i].y;
+            //r_ij.z = r[j].z - r[i].z;
 
-			var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
-			var_t d = sqrt(d2);
-            var_t d_3 = 1.0 / (d*d2);
-            //var_t d_3 = K2 / (d*d2);
+            //var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+            //var_t d = sqrt(d2);
+            //var_t d_3 = 1.0 / (d*d2);
 
-			var_t s = p[j].mass * d_3;
-			a[i].x += s * r_ij.x;
-			a[i].y += s * r_ij.y;
-			a[i].z += s * r_ij.z;
+            //var_t s = p[j].mass * d_3;
+            //a[i].x += s * r_ij.x;
+            //a[i].y += s * r_ij.y;
+            //a[i].z += s * r_ij.z;
 
-			s = p[i].mass * d_3;
-			a[j].x -= s * r_ij.x;
-			a[j].y -= s * r_ij.y;
-			a[j].z -= s * r_ij.z;
+            //s = p[i].mass * d_3;
+            //a[j].x -= s * r_ij.x;
+            //a[j].y -= s * r_ij.y;
+            //a[j].z -= s * r_ij.z;
 		}
-		a[i].x *= K2;
-		a[i].y *= K2;
-		a[i].z *= K2;
+		//a[i].x *= K2;
+		//a[i].y *= K2;
+		//a[i].z *= K2;
 	}
+}
+
+inline
+void nbody::body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, var_t mj, var3_t& ai, var3_t& aj)
+{
+    // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
+    var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
+
+    // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
+    var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+    var_t d = sqrt(d2);
+    var_t d_3 = K2 / (d * d2);
+
+    var_t s = mj * d_3;
+    ai.x += s * r_ij.x;
+    ai.y += s * r_ij.y;
+    ai.z += s * r_ij.z;
+
+    s = mi * d_3;
+    aj.x -= s * r_ij.x;
+    aj.y -= s * r_ij.y;
+    aj.z -= s * r_ij.z;
 }
 
 void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
@@ -441,7 +469,8 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
     const nbp_t::param_t* p = (nbp_t::param_t*)d_p;
 
     var3_t* a = (var3_t*)(dy + nv);
-    
+
+    // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
     // Copy the velocities into dy
     CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
 
@@ -449,9 +478,10 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 	{
 		n_tpb = 256;
 	}
-	set_kernel_launch_param(n_var, n_tpb, grid, block);
+	set_kernel_launch_param(n_obj, n_tpb, grid, block);
 
-	kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, p, r, a);
+    cudaMemset(a, 0, n_obj * sizeof(var3_t));
+    kernel_nbody::calc_grav_accel_naive<<<grid, block>>>(n_obj, d_md, r, p, a);
 	CUDA_CHECK_ERROR();
 }
 
@@ -491,7 +521,6 @@ void nbody::chk_coll(var_t a_ref)
     const var3_t* v = (var3_t*)(h_y + nv);
     const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
 
-    var_t min_d = DBL_MAX;
     for (uint32_t i = 0; i < n_obj; i++)
     {
         var3_t r_ij = { 0, 0, 0 };

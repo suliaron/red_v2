@@ -445,17 +445,17 @@ void free_device_vector(void **ptr, const char *file, int line)
 	}
 }
 
-void free_vector(void **ptr, bool cpu, const char *file, int line)
-{
-	if (cpu)
-	{
-		free_host_vector(ptr, file, line);
-	}
-	else
-	{
-		free_device_vector(ptr, file, line);
-	}
-}
+//void free_vector(void **ptr, bool cpu, const char *file, int line)
+//{
+//	if (cpu)
+//	{
+//		free_host_vector(ptr, file, line);
+//	}
+//	else
+//	{
+//		free_device_vector(ptr, file, line);
+//	}
+//}
 
 void allocate_host_storage(pp_disk_t::sim_data_t *sd, int n)
 {
@@ -560,7 +560,7 @@ void set_device(int id_of_target_dev, ostream& sout)
 	}
 }
 
-void print_array(string path, int n, var_t *data, mem_loc_t mem_loc)
+void print_array(string path, string comment, uint32_t n, var_t *data, mem_loc_t mem_loc)
 {
 	var_t* h_data = NULL;
 
@@ -586,7 +586,8 @@ void print_array(string path, int n, var_t *data, mem_loc_t mem_loc)
 	{
 		h_data = data;
 	}
-	for (int i = 0; i < n; i++)
+    if (!comment.empty()) *out << comment << endl;
+    for (uint32_t i = 0; i < n; i++)
 	{
 		*out << setw(5) << i << setprecision(16) << setw(25) << h_data[i] << endl;
 	}
@@ -657,7 +658,7 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
-		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 
@@ -707,7 +708,7 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
-		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 
@@ -758,7 +759,7 @@ void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_v
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
-		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 
@@ -809,7 +810,7 @@ void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_v
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
-		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 
@@ -860,7 +861,7 @@ void gpu_calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t
 
 		float min_GPU_DT = 1.0e8;
 		uint16_t d_nt = prop.warpSize / 2;
-		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock; nt += d_nt)
+		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
 			set_kernel_launch_param(n_var, nt, grid, block);
 

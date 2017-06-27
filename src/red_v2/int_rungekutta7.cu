@@ -165,8 +165,21 @@ var_t int_rungekutta7::step()
 
 	uint16_t stage = 0;
 	t = f.t;
-	// Calculate initial differentials and store them into k
+#if _DEBUG
+    std::string path("C:\\Work\\red.cuda.Results\\v2.0\\Test\\nbp\\TwoBody\\20170624\\gpu_rk7.txt");
+    char buffer[512];
+    sprintf(buffer, "stage = %2d, f.y:", stage);
+    std::string comment(buffer);
+    redutil2::print_array(path, comment, n_var, f.y, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
+    // Calculate initial differentials and store them into k
 	f.calc_dy(stage, t, f.y, k[0]);  // -> k1
+
+#if _DEBUG
+    sprintf(buffer, "k[%2d]:", stage);
+    comment.assign(buffer);
+    redutil2::print_array(path, comment, n_var, k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ?  MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
 
 	var_t max_err = 0.0;
 	uint16_t iter = 0;
@@ -192,10 +205,25 @@ var_t int_rungekutta7::step()
 		{
 			t = f.t + c[stage] * dt_try;
 			calc_ytemp(stage);
-			f.calc_dy(stage, t, ytemp, k[stage]); // -> k2, k3, ..., k11
-		}
+#if _DEBUG
+            sprintf(buffer, "stage = %2d, ytemp:", stage);
+            comment.assign(buffer);
+            redutil2::print_array(path, comment, n_var, ytemp, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
+            f.calc_dy(stage, t, ytemp, k[stage]); // -> k2, k3, ..., k11
+#if _DEBUG
+            sprintf(buffer, "k[%2d]:", stage);
+            comment.assign(buffer);
+            redutil2::print_array(path, comment, n_var, k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
+        }
 		// We have stage (11) number of k vectors, approximate the solution in f.yout using the bh coeff:
 		calc_y_np1();   // -> f.yout = y = ynp1 = yn + 41/840*k1 - 34/105*k6 ... + 41/840*k11
+#if _DEBUG
+        sprintf(buffer, "stage = %2d, f.yout:", stage);
+        comment.assign(buffer);
+        redutil2::print_array(path, comment, n_var, f.yout, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
 
 		if (adaptive)
 		{
@@ -204,8 +232,18 @@ var_t int_rungekutta7::step()
 			{
 				t = f.t + c[stage] * dt_try;
 				calc_ytemp(stage);
-				f.calc_dy(stage, t, ytemp, k[stage]); // -> k12, k13
-			}
+#if _DEBUG
+                sprintf(buffer, "stage = %2d, ytemp:", stage);
+                comment.assign(buffer);
+                redutil2::print_array(path, comment, n_var, ytemp, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
+                f.calc_dy(stage, t, ytemp, k[stage]); // -> k12, k13
+#if _DEBUG
+                sprintf(buffer, "k[%2d]:", stage);
+                comment.assign(buffer);
+                redutil2::print_array(path, comment, n_var, k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
+#endif
+            }
 			calc_error(f.n_var);
 			max_err = get_max_error(f.n_var);
 			max_err *= dt_try * lambda;
