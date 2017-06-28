@@ -101,7 +101,7 @@ public:
 
 	dim3 grid;            //! Defines the grid of the blocks of the current execution
 	dim3 block;           //! Defines the block of the threads of the current execution
-	uint16_t n_tpb;       //! Holds the number of threads per block
+	//uint16_t n_tpb;       //! Holds the number of threads per block
 
 	integral_t integral;  //! Holds the classical integrals 
 };

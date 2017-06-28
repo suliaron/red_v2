@@ -39,6 +39,8 @@ public:
 	*/
 	void print_integral(std::string& path);
 
+    void calc_n_types();
+
     void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk);
 	void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void calc_integral();
@@ -84,7 +86,15 @@ private:
     void body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, var_t mj, var3_t& ai, var3_t& aj);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 
-    float gpu_calc_grav_accel_naive(uint16_t stage, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a);
-
+    float gpu_calc_grav_accel_naive(uint16_t stage, uint2_t snk, uint2_t src, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a);
+    float gpu_calc_grav_accel_tile(uint16_t stage, uint2_t snk, uint2_t src, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a);
 	nbp_t::metadata_t *h_md, *d_md, *md;
+
+    uint32_t n_si;       //! The total number of SI type bodies
+    uint32_t n_nsi;      //! The total number of NSI type bodies
+    uint32_t n_ni;       //! The total number of NI type bodies
+
+    uint16_t n_tpb_si;       //! Holds the number of threads per block for the SI type bodies
+    uint16_t n_tpb_nsi;      //! Holds the number of threads per block for the NSI type bodies
+    uint16_t n_tpb_ni;       //! Holds the number of threads per block for the NI type bodies
 };

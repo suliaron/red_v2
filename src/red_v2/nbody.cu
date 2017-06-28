@@ -176,6 +176,7 @@ nbody::nbody(string& path_si, string& path_sd, uint32_t n_obj, uint16_t n_ppo, c
     load_solution_info(path_si);
     load_solution_data(path_sd);
 
+    calc_n_types();
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		copy_vars(COPY_DIRECTION_TO_DEVICE);
@@ -195,6 +196,14 @@ void nbody::initialize()
 	h_md = NULL;
 	d_md = NULL;
 	md   = NULL;
+
+    n_si  = 0;
+    n_nsi = 0;
+    n_ni  = 0;
+
+    n_tpb_si  = 0;
+    n_tpb_nsi = 0;
+    n_tpb_ni  = 0;
 }
 
 void nbody::allocate_storage()
@@ -249,6 +258,31 @@ void nbody::copy_metadata(copy_direction_t dir)
 	default:
 		throw std::string("Parameter 'dir' is out of range.");
 	}
+}
+
+void nbody::calc_n_types()
+{
+    for (uint32_t i = 0; i < n_obj; i++)
+    {
+        switch (h_md[i].body_type)
+        {
+        case BODY_TYPE_STAR:
+        case BODY_TYPE_GIANTPLANET:
+        case BODY_TYPE_ROCKYPLANET:
+        case BODY_TYPE_PROTOPLANET:
+            n_si++;
+            break;
+        case BODY_TYPE_SUPERPLANETESIMAL:
+        case BODY_TYPE_PLANETESIMAL:
+            n_nsi++;
+            break;
+        case BODY_TYPE_TESTPARTICLE:
+            n_ni++;
+            break;
+        default:
+            throw string("Unknown body type.");
+        }
+    }
 }
 
 // For Hermite4
@@ -402,7 +436,7 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 
     var3_t* a = (var3_t*)(dy + nv);
 
-    // TODO: do a benchmark and set the optimal thread number
+    // 1. Calculate the acceleration from the gravitational forces
     if (first_call || last_n_obj != n_obj)
 	{
         printf("Searching for the optimal thread number ");
@@ -414,34 +448,42 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
         {
             putc('.', stdout);
             cudaMemset(a, 0, n_obj * sizeof(var3_t));
-            float dt_GPU = gpu_calc_grav_accel_naive(stage, i, curr_t, r, p, a);
+            uint2_t snk = { 0, n_si };
+            uint2_t src = { 0, n_si + n_nsi };
+            //float dt_GPU = gpu_calc_grav_accel_naive(stage, snk, src, i, curr_t, r, p, a);
+            float dt_GPU = gpu_calc_grav_accel_tile(stage, snk, src, i, curr_t, r, p, a);
             if (dt_GPU < min_dt)
             {
                 min_dt = dt_GPU;
-                n_tpb = i;
+                n_tpb_si = i;
             }
         }
-        printf(" Done.\nOptimal thread number = %3d.\n", n_tpb);
+        printf(" Done.\nOptimal thread number = %3d.\n", n_tpb_si);
         // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
         // Copy the velocities into dy
         CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
-
     }
     else
     {
-        set_kernel_launch_param(n_obj, n_tpb, grid, block);
+        set_kernel_launch_param(n_obj, n_tpb_si, grid, block);
 
         cudaMemset(a, 0, n_obj * sizeof(var3_t));
-        kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
+        //kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
+        uint2_t snk = { 0, n_si };
+        uint2_t src = { 0, n_si + n_nsi };
+        float dt_GPU = gpu_calc_grav_accel_tile(stage, snk, src, n_tpb_si, curr_t, r, p, a);
         // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
         // Copy the velocities into dy
         CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
-
         CUDA_CHECK_ERROR();
     }
+    // ------- END -------
+
+    // 2. Calculate the accelerations from other forces
+    // ...
 }
 
-float nbody::gpu_calc_grav_accel_naive(uint16_t stage, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+float nbody::gpu_calc_grav_accel_naive(uint16_t stage, uint2_t snk, uint2_t src, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
 {
     cudaEvent_t start, stop;
 
@@ -450,7 +492,32 @@ float nbody::gpu_calc_grav_accel_naive(uint16_t stage, unsigned int n_tpb, var_t
 
     set_kernel_launch_param(n_obj, n_tpb, grid, block);
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
-    kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
+    kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(snk, src, md, r, p, a);
+
+    CUDA_CHECK_ERROR();
+
+    CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
+    CUDA_SAFE_CALL(cudaEventSynchronize(stop));
+
+    // Computes the elapsed time between two events in milliseconds with a resolution of around 0.5 microseconds.
+    float elapsed_time = 0.0f;
+    CUDA_SAFE_CALL(cudaEventElapsedTime(&elapsed_time, start, stop));
+
+    return elapsed_time;
+}
+
+float nbody::gpu_calc_grav_accel_tile(uint16_t stage, uint2_t snk, uint2_t src, unsigned int n_tpb, var_t curr_t, const var3_t* r, const nbp_t::param_t* p, var3_t* a)
+{
+    cudaEvent_t start, stop;
+
+    CUDA_SAFE_CALL(cudaEventCreate(&start));
+    CUDA_SAFE_CALL(cudaEventCreate(&stop));
+
+    set_kernel_launch_param(n_obj, n_tpb, grid, block);
+    CUDA_SAFE_CALL(cudaEventRecord(start, 0));
+    size_t sh_mem_size = n_tpb * sizeof(var3_t);
+    kernel_nbody::calc_grav_accel_tile <<< grid, block, sh_mem_size >>>(snk, src, md, r, p, a);
+
     CUDA_CHECK_ERROR();
 
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));

@@ -59,8 +59,6 @@ void ode::initialize()
 	d_p	        = NULL;
 	p	        = NULL;
 
-	n_tpb       = 1;
-
 	var3_t zero = {0, 0, 0};
 	integral.h0 = integral.h = 0;
 	integral.c0 = integral.c = zero;
