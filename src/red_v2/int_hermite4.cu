@@ -48,16 +48,16 @@ void int_hermite4::predict()
         const var3_t* acc = (var3_t*)k[0];
         const var3_t* jrk = (var3_t*)k[1];
         const var3_t* r = (var3_t*)f.y;
-        const var3_t* v = (var3_t*)(f.y + 3*f.n_obj);
+        const var3_t* v = (var3_t*)(f.y + 3*f.get_n_obj());
 
         var3_t* pr = (var3_t*)ytemp;
-        var3_t* pv = (var3_t*)(ytemp + 3*f.n_obj);
+        var3_t* pv = (var3_t*)(ytemp + 3*f.get_n_obj());
 
         /* Eq. (101) : I first determine trial values for the position and velocity,
          * simply by expanding both as a Taylor series, using only what we know at time,
          * which are the position, velocity, acceleration and jerk.
          */
-        for (uint32_t i = 0; i < f.n_obj; i++)
+        for (uint32_t i = 0; i < f.get_n_obj(); i++)
         {
             pr[i].x = r[i].x + dt * (v[i].x + dt_2 * (acc[i].x + dt_3 * jrk[i].x));
             pr[i].y = r[i].y + dt * (v[i].y + dt_2 * (acc[i].y + dt_3 * jrk[i].y));
@@ -86,17 +86,17 @@ void int_hermite4::correct()
         const var3_t* pacc = (var3_t*)k[2];
         const var3_t* pjrk = (var3_t*)k[3];
         const var3_t* r = (var3_t*)f.y;
-        const var3_t* v = (var3_t*)(f.y + 3*f.n_obj);
+        const var3_t* v = (var3_t*)(f.y + 3*f.get_n_obj());
 
         var3_t* cr = (var3_t*)f.yout;
-        var3_t* cv = (var3_t*)(f.yout + 3*f.n_obj);
+        var3_t* cv = (var3_t*)(f.yout + 3*f.get_n_obj());
 
         /* Eq. (103) : By switching the order of computation for the corrected 
          * form of the position and velocity, you are able to use the corrected
          * version of the velocity, rather than the predicted version, in determining 
          * the corrected version of the position.
          */
-        for (uint32_t i = 0; i < f.n_obj; i++)
+        for (uint32_t i = 0; i < f.get_n_obj(); i++)
         {
             var3_t am = {acc[i].x - pacc[i].x, acc[i].y - pacc[i].y, acc[i].z - pacc[i].z};
             var3_t ap = {acc[i].x + pacc[i].x, acc[i].y + pacc[i].y, acc[i].z + pacc[i].z};
@@ -132,7 +132,7 @@ var_t int_hermite4::step()
         const var3_t* jrk  = (var3_t*)k[3];
 
         var_t min_dt2 = 1.0e20;
-        for (uint32_t i = 0; i < f.n_obj; i++)
+        for (uint32_t i = 0; i < f.get_n_obj(); i++)
         {
             var_t acc2 = SQR(acc[i].x) + SQR(acc[i].y) + SQR(acc[i].z);
             var_t jrk2 = SQR(jrk[i].x) + SQR(jrk[i].y) + SQR(jrk[i].z);
@@ -190,16 +190,16 @@ void int_hermite4b::predict()
         const var3_t* acc = (var3_t*)k[0];
         const var3_t* jrk = (var3_t*)k[1];
         const var3_t* r = (var3_t*)f.y;
-        const var3_t* v = (var3_t*)(f.y + 3*f.n_obj);
+        const var3_t* v = (var3_t*)(f.y + 3*f.get_n_obj());
 
         var3_t* pr = (var3_t*)ytemp;
-        var3_t* pv = (var3_t*)(ytemp + 3*f.n_obj);
+        var3_t* pv = (var3_t*)(ytemp + 3*f.get_n_obj());
 
         /* Eq. (101) : I first determine trial values for the position and velocity,
          * simply by expanding both as a Taylor series, using only what we know at time,
          * which are the position, velocity, acceleration and jerk.
          */
-        for (uint32_t i = 0; i < f.n_obj; i++)
+        for (uint32_t i = 0; i < f.get_n_obj(); i++)
         {
             pr[i].x = r[i].x + dt * (v[i].x + dt_2 * (acc[i].x + dt_3 * jrk[i].x));
             pr[i].y = r[i].y + dt * (v[i].y + dt_2 * (acc[i].y + dt_3 * jrk[i].y));
@@ -228,17 +228,17 @@ void int_hermite4b::correct()
         const var3_t* pacc = (var3_t*)k[2];
         const var3_t* pjrk = (var3_t*)k[3];
         const var3_t* r = (var3_t*)f.y;
-        const var3_t* v = (var3_t*)(f.y + 3*f.n_obj);
+        const var3_t* v = (var3_t*)(f.y + 3*f.get_n_obj());
 
         var3_t* cr = (var3_t*)f.yout;
-        var3_t* cv = (var3_t*)(f.yout + 3*f.n_obj);
+        var3_t* cv = (var3_t*)(f.yout + 3*f.get_n_obj());
 
         /* Eq. (103) : By switching the order of computation for the corrected 
          * form of the position and velocity, you are able to use the corrected
          * version of the velocity, rather than the predicted version, in determining 
          * the corrected version of the position.
          */
-        for (uint32_t i = 0; i < f.n_obj; i++)
+        for (uint32_t i = 0; i < f.get_n_obj(); i++)
         {
             var3_t am = {acc[i].x - pacc[i].x, acc[i].y - pacc[i].y, acc[i].z - pacc[i].z};
             var3_t ap = {acc[i].x + pacc[i].x, acc[i].y + pacc[i].y, acc[i].z + pacc[i].z};
@@ -275,7 +275,7 @@ var_t int_hermite4b::step()
         const var3_t* jrk  = (var3_t*)k[3];
 
         var_t min_dt2 = 1.0e20;
-        for (uint32_t i = 0; i < f.n_obj; i++)
+        for (uint32_t i = 0; i < f.get_n_obj(); i++)
         {
             var_t acc2 = SQR(acc[i].x) + SQR(acc[i].y) + SQR(acc[i].z);
             var_t jrk2 = SQR(jrk[i].x) + SQR(jrk[i].y) + SQR(jrk[i].z);

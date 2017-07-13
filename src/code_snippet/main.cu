@@ -13,16 +13,15 @@ using namespace redutil2;
 #if 1
 int main()
 {
-    printf("sizeof(unsigned short int) = %d\n", sizeof(unsigned short int));
-    printf("sizeof(usi_t) = %d\n", sizeof(usi_t));
+    printf("sizeof(unsigned short int) = %zu\n", sizeof(unsigned short int));
 
-    float f = 1.23456789e10;
+    float f = 1.23456789e10f;
 
     printf("f = '%*e'\n", FLT_T_W, f);
     cout << "'" << setw(FLT_T_W) << f << "'" << endl;
 
-    printf("sizeof(nbp_t::metadata_t) = %3d\n", sizeof(nbp_t::metadata_t));
-    printf("sizeof(nbp_t::param_t)    = %3d\n", sizeof(nbp_t::param_t));
+    printf("sizeof(nbp_t::metadata_t) = %3zu\n", sizeof(nbp_t::metadata_t));
+    printf("sizeof(nbp_t::param_t)    = %3zu\n", sizeof(nbp_t::param_t));
 
 
     try

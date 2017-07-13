@@ -32,7 +32,20 @@ public:
 	//! Destructor
 	~ode();
 
-	void initialize();
+    //! Set the computing device to calculate the forces for the next step
+    /*
+    \param device specifies which device will execute the computations
+    */
+    void set_comp_dev(comp_dev_t cd);
+    comp_dev_t get_comp_dev() { return comp_dev; }
+
+    uint32_t get_n_obj()      { return n_obj;    }
+    void set_n_obj(uint32_t n);
+
+    uint32_t get_n_var() { return n_var; }
+    uint32_t get_n_par() { return n_par; }
+    
+    void initialize();
 
 	void allocate_storage(       uint32_t n_var, uint32_t n_par);
 	void allocate_host_storage(  uint32_t n_var, uint32_t n_par);
@@ -88,20 +101,19 @@ public:
 	var_t* yout;          //! Alias to Host or Device vector of the dependent variables at tout depeding on the execution device
 	var_t* p;             //! Alias to Host or Device vector of parameters depeding on the execution device
 
-	uint16_t n_dim;       //! The space dimension of the problem 
-	uint32_t n_obj;       //! The total number of objets in the problem
+    integral_t integral;  //! Holds the classical integrals 
 
-	uint16_t n_vpo;       //! The number of variables per object (vpo)
+protected:
+    uint32_t n_obj;       //! The total number of objects in the problem
+    uint32_t n_var;       //! The total number of variables of the problem
+    uint32_t n_par;       //! The total number of parameters of the problem
+
+    uint16_t n_dim;       //! The space dimension of the problem 
+    uint16_t n_vpo;       //! The number of variables per object (vpo)
 	uint16_t n_ppo;       //! The number of parameters per object (ppo)
-
-	uint32_t n_var;       //! The total number of variables of the problem
-	uint32_t n_par;       //! The total number of parameters of the problem
 
 	comp_dev_t comp_dev;  //! The name of the executing device
 
 	dim3 grid;            //! Defines the grid of the blocks of the current execution
 	dim3 block;           //! Defines the block of the threads of the current execution
-	//uint16_t n_tpb;       //! Holds the number of threads per block
-
-	integral_t integral;  //! Holds the classical integrals 
 };

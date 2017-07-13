@@ -1,15 +1,14 @@
 #pragma once
 
-//#include <cstring>     // memcpy
 #include <stdint.h>
 #include <vector>
 
 // include CUDA
 #include "cuda_runtime.h"
 
-typedef double        var_t;
+typedef double var_t;
+typedef int2   int2_t;
 typedef unsigned short int usi_t;
-typedef int2          int2_t;
 typedef unsigned char uchar_t;
 
 typedef enum
@@ -34,14 +33,6 @@ typedef enum
 
 	DYN_MODEL_N
 } dyn_model_t;
-
-typedef enum 
-{
-	INPUT_FORMAT_RED,
-	INPUT_FORMAT_NONAME,
-	INPUT_FORMAT_HIPERION,
-    INPUT_FORMAT_N
-} input_format_name_t;
 
 typedef enum 
 {

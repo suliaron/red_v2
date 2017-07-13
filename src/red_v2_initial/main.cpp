@@ -761,6 +761,183 @@ namespace model
             FREE_HOST_VECTOR((void **)&md);
         }
 
+        void create_solar_system(string &dir, string& filename)
+        {
+            const uint32_t n_obj = 5;
+            uint32_t n_var = 6 * n_obj;
+            uint32_t n_par = n_obj;
+            ALLOCATE_HOST_VECTOR((void**)&y, n_var * sizeof(var_t));
+            ALLOCATE_HOST_VECTOR((void**)&p, n_par * sizeof(nbp_t::param_t));
+            ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+            ALLOCATE_HOST_VECTOR((void**)&oe, n_obj * sizeof(orbelem_t));
+
+            // The id of each body must be larger than 0 in order to indicate inactive body with negative id (ie. zero is not good)
+            uint32_t bodyId = 1;
+            uint32_t bodyIdx = 0;
+
+            nbp_t::metadata_t default_md = { true, BODY_TYPE_N, 1, 0.0f, MIGRATION_TYPE_NO, false, false, false };
+            orbelem_t _oe = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+            var3_t rVec = { 0.0, 0.0, 0.0 };
+            var3_t vVec = { 0.0, 0.0, 0.0 };
+            // Star: Sun
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_STAR;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = 1.0;
+                p[bodyIdx].radius = 1.0 * constants::SolarRadiusToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                uint32_t offset = 3 * bodyIdx;
+                y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
+                offset += 3 * n_obj;
+                y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
+
+                bodyId++, bodyIdx++;
+            }
+#if 0
+            // Mercury
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_ROCKYPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::MercuryToSolar;
+                p[bodyIdx].radius = 2439.7 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::mercury_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            // Venus
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_ROCKYPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::VenusToSolar;
+                p[bodyIdx].radius = 6051.8 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::venus_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            // Earth
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_ROCKYPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::EarthToSolar;
+                p[bodyIdx].radius = 6371.0 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::earth_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            // Mars
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_ROCKYPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::MarsToSolar;
+                p[bodyIdx].radius = 3389.5 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::mars_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+#endif
+            // Jupiter
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_GIANTPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::JupiterToSolar;
+                p[bodyIdx].radius = 71492.0 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::jupiter_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            // Saturn
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_GIANTPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::SaturnToSolar;
+                p[bodyIdx].radius = 60268.0 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::saturn_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            // Uranus
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_GIANTPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::UranusToSolar;
+                p[bodyIdx].radius = 71492.0 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::uranus_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            // Neptune
+            {
+                md[bodyIdx] = default_md;
+                md[bodyIdx].body_type = BODY_TYPE_GIANTPLANET;
+                md[bodyIdx].id = bodyId;
+
+                p[bodyIdx].mass = constants::NeptuneToSolar;
+                p[bodyIdx].radius = 24766.0 * constants::KilometerToAu;
+                p[bodyIdx].density = tools::calc_density(p[bodyIdx].mass, p[bodyIdx].radius);
+
+                t0 = extract_from_horizon_output(ephemeris_major_planets::date_20150511::neptune_oe, oe[bodyIdx]);
+                bodyId++, bodyIdx++;
+            }
+
+            for (uint32_t i = 1; i < n_obj; i++)
+            {
+                var_t mu = K2 * (p[0].mass + p[i].mass);
+                tools::calc_phase(mu, &oe[i], &rVec, &vVec);
+                uint32_t offset = 3 * i;
+                y[offset + 0] = rVec.x; y[offset + 1] = rVec.y; y[offset + 2] = rVec.z;
+                offset += 3 * n_obj;
+                y[offset + 0] = vVec.x; y[offset + 1] = vVec.y; y[offset + 2] = vVec.z;
+
+                // Set the initial stepsize for the integrator
+                if (1 == i)
+                {
+                    dt0 = tools::calc_orbital_period(mu, oe[i].sma) / 100.0;
+                }
+            }
+
+            // Transform the coordinates into barycentric
+            var3_t* r = (var3_t*)y;
+            var3_t* v = (var3_t*)(y + 3 * n_obj);
+            tools::nbp::transform_to_bc(n_obj, p, r, v);
+
+            print(dir, filename, n_obj);
+
+            FREE_HOST_VECTOR((void **)&y);
+            FREE_HOST_VECTOR((void **)&p);
+            FREE_HOST_VECTOR((void **)&md);
+            FREE_HOST_VECTOR((void **)&oe);
+        }
+
 	} /* namespace nbody */
 } /* namespace model */
 
@@ -913,7 +1090,8 @@ int main(int argc, const char **argv)
 		//model::nbody::create(odir, filename, n_obj);
 		//model::nbody::create(odir, filename);               // The two-body problem
         //model::nbody::create_grav_focusing(odir, filename);
-        model::nbody::ceate_disk(odir, filename, n_obj);
+        //model::nbody::ceate_disk(odir, filename, n_obj);
+        model::nbody::create_solar_system(odir, filename);
 	}
 	catch (const string& msg)
 	{

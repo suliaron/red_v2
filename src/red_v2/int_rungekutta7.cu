@@ -107,12 +107,12 @@ void int_rungekutta7::calc_ytemp(uint16_t stage)
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_a + stage * a_col;
-		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.get_n_var(), comp_dev.id_dev, optimize);
 	}
 	else
 	{
 		var_t* coeff = h_a + stage * a_col;
-		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
+		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.get_n_var());
 	}
 }
 
@@ -121,12 +121,12 @@ void int_rungekutta7::calc_y_np1()
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_bh;
-		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 11, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 11, f.get_n_var(), comp_dev.id_dev, optimize);
 	}
 	else
 	{
 		var_t* coeff = h_bh;
-		tools::calc_lin_comb_s(f.yout, f.y, h_k, coeff, 11, f.n_var);
+		tools::calc_lin_comb_s(f.yout, f.y, h_k, coeff, 11, f.get_n_var());
 	}
 }
 
@@ -153,10 +153,10 @@ var_t int_rungekutta7::step()
 	static const uint16_t n_bh = sizeof(int_rungekutta7::bh) / sizeof(var_t);
 	static uint32_t n_var = 0;
 
-    if (n_var != f.n_var)
+    if (n_var != f.get_n_var())
 	{
 		optimize = true;
-		n_var = f.n_var;
+		n_var = f.get_n_var();
 	}
 	else
 	{
@@ -244,8 +244,8 @@ var_t int_rungekutta7::step()
                 redutil2::print_array(path, comment, n_var, k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
 #endif
             }
-			calc_error(f.n_var);
-			max_err = get_max_error(f.n_var);
+			calc_error(f.get_n_var());
+			max_err = get_max_error(f.get_n_var());
 			max_err *= dt_try * lambda;
 			calc_dt_try(max_err);
 		}

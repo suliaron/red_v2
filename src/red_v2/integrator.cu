@@ -20,7 +20,7 @@ integrator::integrator(ode& f, bool adaptive, var_t tolerance, uint16_t n_stage,
 {
 	initialize();
 
-	allocate_storage(f.n_var);
+	allocate_storage(f.get_n_var());
 	create_aliases();
 }
 
@@ -153,7 +153,6 @@ void integrator::create_aliases()
 	case PROC_UNIT_CPU:
 		ytemp = h_ytemp;
 		k = h_k;
-		//memcpy(k, h_k, n_stage * sizeof(var_t*));
 		if (adaptive)
 		{
 			err = h_err;
@@ -162,45 +161,42 @@ void integrator::create_aliases()
 	case PROC_UNIT_GPU:
 		ytemp = d_ytemp;
 		k = cpy_dk;
-		//memcpy(k, cpy_dk, n_stage * sizeof(var_t*));
 		if (adaptive)
 		{
 			err = d_err;
 		}
 		break;
 	default:
-		throw string("Parameter 'PROC_UNIT' is out of range.");
+		throw string("Parameter 'comp_dev.proc_unit' is out of range.");
 	}
 }
 
-void integrator::set_computing_device(comp_dev_t comp_dev)
+void integrator::set_comp_dev(comp_dev_t cd)
 {
-	// If the execution is already on the requested device than nothing to do
-	if (this->comp_dev.proc_unit == comp_dev.proc_unit)
-	{
-		return;
-	}
-	// TODO: implement
+    // If the execution is already on the requested device than nothing to do
+    if (comp_dev.proc_unit == cd.proc_unit)
+    {
+        return;
+    }
 
-	//int n_body = ppd->n_bodies->get_n_total_playing();
+    switch (cd.proc_unit)
+    {
+    case PROC_UNIT_CPU:
+        deallocate_Butcher_tableau();
+        deallocate_device_storage();
+        break;
+    case PROC_UNIT_GPU:
+        allocate_Butcher_tableau();
+        allocate_device_storage(f.get_n_var());
+        break;
+    default:
+        throw string("Parameter 'cd.proc_unit' is out of range.");
+    }
 
-	//switch (device)
-	//{
-	//case PROC_UNIT_CPU:
-	//	deallocate_device_storage();
-	//	break;
-	//case PROC_UNIT_GPU:
-	//	allocate_device_storage(n_body);
-	//	break;
-	//default:
-	//	throw string("Parameter 'device' is out of range.");
-	//}
-
-	//this->PROC_UNIT = device;
-	//create_aliases();
-	//f->set_computing_device(device);
+    comp_dev = cd;
+    create_aliases();
+    f.set_comp_dev(cd);
 }
-
 
 var_t integrator::get_max_error(uint32_t n_var)
 {
@@ -230,9 +226,17 @@ var_t integrator::get_max_error(uint32_t n_var)
 
 void integrator::calc_dt_try(var_t max_err)
 {
-	if (1.0e-20 < max_err)
+    var_t coeff = 0.9;
+
+    // TODO: find a method to optimaly set the dt_try (if n_obj is large to many failed steps!!)
+    if (100 < n_tried_step)
+    {
+        // dt_try = ...
+    }
+
+    if (1.0e-20 < max_err)
 	{
-		dt_try *= 0.9 * pow(tolerance / max_err, 1.0/(n_order));
+		dt_try *= coeff * pow(tolerance / max_err, 1.0/(n_order));
 	}
 	else
 	{

@@ -32,11 +32,11 @@ void euler::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.get_n_var(), comp_dev.id_dev, optimize);
 	}
 	else
 	{
-		tools::calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.n_var);
+		tools::calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.get_n_var());
 	}
 }
 
@@ -44,10 +44,10 @@ var_t euler::step()
 {
 	static uint32_t n_var = 0;
 
-    if (n_var != f.n_var)
+    if (n_var != f.get_n_var())
 	{
 		optimize = true;
-		n_var = f.n_var;
+		n_var = f.get_n_var();
 	}
 	else
 	{

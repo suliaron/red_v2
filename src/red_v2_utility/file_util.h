@@ -30,16 +30,6 @@ namespace redutil2
 		void print_body_record_Emese(     std::ofstream &sout, std::string name, var_t epoch, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
 		void print_body_record_HIPERION(  std::ofstream &sout, std::string name, var_t epoch, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
 
-		void print_oe_record(std::ofstream &sout, orbelem_t* oe);
-		void print_oe_record(std::ofstream &sout, orbelem_t* oe, pp_disk_t::param_t *p);
-		void print_oe_record(std::ofstream &sout, var_t epoch, orbelem_t* oe, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd);
-
-		void load_data_info_record_ascii( std::ifstream& input, var_t& t, var_t& dt, n_objects_t** n_bodies);
-		void load_data_info_record_binary(std::ifstream& input, var_t& t, var_t& dt, n_objects_t** n_bodies);
-		void load_data_record_ascii( std::ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
-		void load_data_record_binary(std::ifstream& input, std::string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v);
-
-
 		namespace tbp
 		{
 		void print_solution_info(std::ofstream& sout, var_t t, var_t dt, data_rep_t repres);
@@ -75,8 +65,14 @@ namespace redutil2
                 \param sout print the data to this stream
             */
             void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, nbp_t::metadata_t* md, nbp_t::param_t* p, var_t* y, data_rep_t repres);
-        } /* namespace nbp */
 
+            //! Print the orbital elements refered to the star (first body) for each object in text format
+            /*
+                \param sout print the data to this stream
+                \param epoch the epoch for which the orbital elemns are valid
+            */
+            void print_oe_record(std::ofstream& sout, var_t epoch, const orbelem_t& oe, const nbp_t::param_t& p, const nbp_t::metadata_t& md);
+        } /* namespace nbp */
 
 	} /* file */
 } /* redutil2 */

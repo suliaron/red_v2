@@ -66,6 +66,13 @@ void ode::initialize()
 	integral.V0 = integral.V = zero;
 }
 
+void ode::set_n_obj(uint32_t n)
+{
+    n_obj = n;
+    n_var = n_obj * n_vpo;
+    n_par = n_obj * n_ppo;
+}
+
 void ode::allocate_storage(uint32_t n_var, uint32_t n_par)
 {
 	allocate_host_storage(n_var, n_par);
@@ -113,28 +120,6 @@ void ode::deallocate_device_storage()
 	FREE_DEVICE_VECTOR((void **)&(d_p));
 }
 
-// Date of creation: 2016.08.03.
-// Last edited: 
-// Status: Not tested
-void ode::create_aliases()
-{
-	switch (comp_dev.proc_unit)
-	{
-	case PROC_UNIT_CPU:
-		y    = h_y;
-		yout = h_yout;
-		p    = h_p;
-		break;
-	case PROC_UNIT_GPU:
-		y    = d_y;
-		yout = d_yout;
-		p    = d_p;
-		break;
-	default:
-		throw std::string("Parameter 'proc_unit' is out of range.");
-	}
-}
-
 void ode::copy_vars(copy_direction_t dir)
 {
 	switch (dir)
@@ -171,4 +156,54 @@ void ode::swap()
 	std::swap(y, yout);
 	std::swap(h_y, h_yout);
 	std::swap(d_y, d_yout);
+}
+
+// Date of creation: 2016.08.03.
+// Last edited: 
+// Status: Not tested
+void ode::create_aliases()
+{
+    switch (comp_dev.proc_unit)
+    {
+    case PROC_UNIT_CPU:
+        y    = h_y;
+        yout = h_yout;
+        p    = h_p;
+        break;
+    case PROC_UNIT_GPU:
+        y    = d_y;
+        yout = d_yout;
+        p    = d_p;
+        break;
+    default:
+        throw std::string("Parameter 'proc_unit' is out of range.");
+    }
+}
+
+void ode::set_comp_dev(comp_dev_t cd)
+{
+    // If the execution is already on the requested device than nothing to do
+    if (comp_dev.proc_unit == cd.proc_unit)
+    {
+        return;
+    }
+
+    switch (cd.proc_unit)
+    {
+    case PROC_UNIT_CPU:
+        copy_params(COPY_DIRECTION_TO_HOST);
+        copy_vars(COPY_DIRECTION_TO_HOST);
+        deallocate_device_storage();
+        break;
+    case PROC_UNIT_GPU:
+        allocate_device_storage(n_var, n_par);
+        copy_params(COPY_DIRECTION_TO_DEVICE);
+        copy_vars(COPY_DIRECTION_TO_DEVICE);
+        break;
+    default:
+        throw std::string("Parameter 'cd.proc_unit' is out of range.");
+    }
+
+    comp_dev = cd;
+    create_aliases();
 }

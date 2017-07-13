@@ -129,12 +129,12 @@ void int_rungekutta5::calc_ytemp(uint16_t stage)
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_a + stage * a_col;
-		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.get_n_var(), comp_dev.id_dev, optimize);
 	}
 	else
 	{
 		var_t* coeff = h_a + stage * a_col;
-		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.n_var);
+		tools::calc_lin_comb_s(ytemp, f.y, h_k, coeff, stage, f.get_n_var());
 	}
 }
 
@@ -143,12 +143,12 @@ void int_rungekutta5::calc_y_np1()
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_bh;
-		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 6, f.n_var, comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 6, f.get_n_var(), comp_dev.id_dev, optimize);
 	}
 	else
 	{
 		var_t* coeff = h_bh;
-		tools::calc_lin_comb_s(f.yout, f.y, h_k, coeff, 6, f.n_var);
+		tools::calc_lin_comb_s(f.yout, f.y, h_k, coeff, 6, f.get_n_var());
 	}
 }
 
@@ -176,10 +176,10 @@ var_t int_rungekutta5::step()
 	static bool first_call = true;
 	static uint32_t n_var = 0;
 
-    if (n_var != f.n_var)
+    if (n_var != f.get_n_var())
 	{
 		optimize = true;
-		n_var = f.n_var;
+		n_var = f.get_n_var();
 	}
 	else
 	{
@@ -209,11 +209,11 @@ var_t int_rungekutta5::step()
 		{
             if (PROC_UNIT_GPU == comp_dev.proc_unit)
             {
-                CUDA_SAFE_CALL(cudaMemcpy(k[0], k[6], f.n_var*sizeof(var_t), cudaMemcpyDeviceToDevice));
+                CUDA_SAFE_CALL(cudaMemcpy(k[0], k[6], f.get_n_var()*sizeof(var_t), cudaMemcpyDeviceToDevice));
             }
             else
             {
-    			memcpy(k[0], k[6], f.n_var*sizeof(var_t));
+    			memcpy(k[0], k[6], f.get_n_var()*sizeof(var_t));
             }
 		}
 	}
@@ -252,8 +252,8 @@ var_t int_rungekutta5::step()
 			// Here stage = 6
 			t = f.t + c[stage] * dt_try;
 			f.calc_dy(stage, t, f.yout, k[stage]); // -> k7
-			calc_error(f.n_var);
-			max_err = get_max_error(f.n_var);
+			calc_error(f.get_n_var());
+			max_err = get_max_error(f.get_n_var());
 			max_err *= dt_try * lambda;
 			calc_dt_try(max_err);
 		}

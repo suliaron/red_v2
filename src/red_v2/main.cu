@@ -144,8 +144,27 @@ void print_info(options* opt, ode* f, integrator* intgr, var_t dt, var_t total_t
     fclose(fout);
 }
 
-void run_benchmark(options* opt, ode* f, integrator* intgr, ofstream& slog)
-{ }
+comp_dev_t run_benchmark(options* opt, ode* f, integrator* intgr)
+{
+    comp_dev_t cd = { PROC_UNIT_CPU, 0 };
+
+    var_t Dt_CPU = 0.0; //! The time interval for one integration step [sec]
+    intgr->set_comp_dev(cd);
+    // make the integration step, and measure the time it takes
+#ifdef _WIN32
+    chrono::time_point<chrono::system_clock> t0 = chrono::system_clock::now();
+#else
+    uint64_t t0 = GetTimeMs64();
+#endif
+    f->dt = intgr->step();
+#ifdef _WIN32
+    Dt_CPU = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - t0).count() / 1.0e3; // [sec]
+#else
+    Dt_CPU = (var_t)(GetTimeMs64() - t0) / 1.0e6;        // [sec]
+#endif
+
+    return cd;
+}
 
 void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 {
@@ -182,7 +201,8 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	/* 
 	 * Main cycle
 	 */
-	while (f->t <= opt->param->simulation_length)
+    var_t length = 0.0;
+	while (length <= opt->param->simulation_length) //(f->t <= opt->param->simulation_length)
 	{
         //if (DYN_MODEL_NBODY == opt->dyn_model)
         //{
@@ -204,6 +224,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 #endif
         f->t_wc += Dt_CPU;
         dt_ls += fabs(f->dt);
+        length += fabs(f->dt);
 
 		if (opt->param->output_interval <= fabs(dt_ls))
 		{
@@ -233,6 +254,12 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
         f->calc_integral();
         f->print_integral(path_integral);
         slog << tools::get_time_stamp() << " Data were printed" << endl;
+    }
+    if (opt->verbose && opt->print_to_screen)
+    {
+        printf("No. of passed steps: %20llu\n", intgr->get_n_passed_step());
+        printf("No. of failed steps: %20llu\n", intgr->get_n_failed_step());
+        printf("No. of  tried steps: %20llu\n", intgr->get_n_tried_step());
     }
 } /* run_simulation() */
 
@@ -282,22 +309,12 @@ int main(int argc, const char** argv, const char** env)
 		file::log_start(*slog, argc, argv, env, opt->param->get_data(), opt->print_to_screen);
 
 		ode *f = opt->create_model();
-		integrator *intgr = opt->create_integrator(*f);
+// TODO: Clear this
+        nbody* nb = (nbody*)f;
+        nb->set_print_oe(true);
 
-		if (opt->benchmark && DYN_MODEL_NBODY == opt->dyn_model)
-		{
-			run_benchmark(opt, f, intgr, *slog);
-		}
-		else
-		{
-			run_simulation(opt, f, intgr, *slog);
-			if (opt->verbose && opt->print_to_screen)
-			{
-				printf("No. of passed steps: %20llu\n", intgr->get_n_passed_step());
-				printf("No. of failed steps: %20llu\n", intgr->get_n_failed_step());
-				printf("No. of  tried steps: %20llu\n", intgr->get_n_tried_step());
-			}
-		}
+        integrator *intgr = opt->create_integrator(*f);
+        run_simulation(opt, f, intgr, *slog);
 	} /* try */
 	catch (const string& msg)
 	{

@@ -407,151 +407,6 @@ namespace redutil2
             sout.flush();
         }
 
-        void print_oe_record(ofstream &sout, orbelem_t* oe)
-        {
-	        static int var_t_w  = 15;
-
-	        sout.precision(6);
-	        sout.setf(ios::right);
-	        sout.setf(ios::scientific);
-
-	        sout << setw(var_t_w) << oe->sma << SEP 
-                 << setw(var_t_w) << oe->ecc << SEP 
-                 << setw(var_t_w) << oe->inc << SEP 
-                 << setw(var_t_w) << oe->peri << SEP 
-                 << setw(var_t_w) << oe->node << SEP 
-                 << setw(var_t_w) << oe->mean << endl;
-
-	        sout.flush();
-        }
-
-        void print_oe_record(ofstream &sout, orbelem_t* oe, pp_disk_t::param_t *p)
-        {
-	        static int var_t_w  = 15;
-
-	        sout.precision(6);
-	        sout.setf(ios::right);
-	        sout.setf(ios::scientific);
-
-	        sout << setw(var_t_w) << oe->sma    << SEP 
-                 << setw(var_t_w) << oe->ecc    << SEP 
-                 << setw(var_t_w) << oe->inc    << SEP 
-                 << setw(var_t_w) << oe->peri   << SEP 
-                 << setw(var_t_w) << oe->node   << SEP 
-                 << setw(var_t_w) << oe->mean   << SEP
-                 << setw(var_t_w) << p->mass    << SEP
-                 << setw(var_t_w) << p->radius  << SEP
-                 << setw(var_t_w) << p->density << SEP
-                 << setw(var_t_w) << p->cd      << endl;
-
-	        sout.flush();
-        }
-
-        void print_oe_record(ofstream &sout, var_t epoch, orbelem_t* oe, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd)
-        {
-	        static int var_t_w  = 15;
-	        static int int_t_w  = 7;
-
-	        sout.precision(6);
-	        sout.setf(ios::right);
-	        sout.setf(ios::scientific);
-
-	        sout << setw(var_t_w) << epoch          << SEP 
-		         << setw(int_t_w) << bmd->id        << SEP 
-		         << setw(      2) << bmd->body_type << SEP 
-                 << setw(var_t_w) << p->mass        << SEP
-                 << setw(var_t_w) << p->radius      << SEP
-                 << setw(var_t_w) << p->density     << SEP
-                 << setw(var_t_w) << p->cd          << SEP
-		         << setw(var_t_w) << oe->sma        << SEP 
-                 << setw(var_t_w) << oe->ecc        << SEP 
-                 << setw(var_t_w) << oe->inc        << SEP 
-                 << setw(var_t_w) << oe->peri       << SEP 
-                 << setw(var_t_w) << oe->node       << SEP 
-                 << setw(var_t_w) << oe->mean       << endl;
-
-	        sout.flush();
-        }
-
-        void load_data_info_record_ascii(ifstream& input, var_t& t, var_t& dt, n_objects_t** n_bodies)
-        {
-	        uint32_t ns, ngp, nrp, npp, nspl, npl, ntp;
-	        ns = ngp = nrp = npp = nspl = npl = ntp = 0;
-
-	        input >> t >> dt; 
-	        input >> ns >> ngp >> nrp >> npp >> nspl >> npl >> ntp;
-
-	        *n_bodies = new n_objects_t(ns, ngp, nrp, npp, nspl, npl, ntp);
-        }
-
-        void load_data_info_record_binary(ifstream& input, var_t& t, var_t& dt, n_objects_t** n_bodies)
-        {
-	        uint32_t ns, ngp, nrp, npp, nspl, npl, ntp;
-	        ns = ngp = nrp = npp = nspl = npl = ntp = 0;
-
-	        input.read((char*)&t, sizeof(var_t));
-	        input.read((char*)&dt, sizeof(var_t));
-
-	        input.read((char*)&ns,   sizeof(ns));
-	        input.read((char*)&ngp,  sizeof(ngp));
-	        input.read((char*)&nrp,  sizeof(nrp));
-	        input.read((char*)&npp,  sizeof(npp));
-	        input.read((char*)&nspl, sizeof(nspl));
-	        input.read((char*)&npl,  sizeof(npl));
-	        input.read((char*)&ntp,  sizeof(ntp));
-
-	        *n_bodies = new n_objects_t(ns, ngp, nrp, npp, nspl, npl, ntp);
-        }
-
-        void load_data_record_ascii(ifstream& input, string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v)
-        {
-	        int	type = 0;
-	        string	buffer;
-
-	        // name
-	        input >> buffer;
-	        // The names must be less than or equal to 30 chars
-	        if (buffer.length() > 30)
-	        {
-		        buffer = buffer.substr(0, 30);
-	        }
-	        name = buffer;
-
-	        // id
-	        input >> bmd->id;
-	        // body type
-	        input >> type;
-	        bmd->body_type = static_cast<body_type_t>(type);
-	        // migration type
-	        input >> type;
-	        bmd->mig_type = static_cast<migration_type_t>(type);
-	        // migration stop at
-	        input >> bmd->mig_stop_at;
-
-	        // mass, radius density and stokes coefficient
-	        input >> p->mass >> p->radius >> p->density >> p->cd;
-
-	        // position
-	        input >> r->x >> r->y >> r->z;
-	        // velocity
-	        input >> v->x >> v->y >> v->z;
-	        r->w = v->w = 0.0;
-        }
-
-        void load_data_record_binary(ifstream& input, string& name, pp_disk_t::param_t *p, pp_disk_t::body_metadata_t *bmd, var4_t *r, var4_t *v)
-        {
-	        char buffer[30];
-	        memset(buffer, 0, sizeof(buffer));
-
-	        input.read(buffer,      30*sizeof(char));
-	        input.read((char*)bmd,  1*sizeof(pp_disk_t::body_metadata_t));
-	        input.read((char*)p,    1*sizeof(pp_disk_t::param_t));
-	        input.read((char*)r,    3*sizeof(var_t));
-	        input.read((char*)v,    3*sizeof(var_t));
-
-	        name = buffer;
-        }
-
         namespace tbp
         {
             void print_solution_info(std::ofstream& sout, var_t t, var_t dt, data_rep_t repres)
@@ -791,8 +646,33 @@ namespace redutil2
 	            default:
 		            throw string("Parameter 'repres' is out of range.");
 	            }
-
             }
+
+            void print_oe_record(ofstream &sout, var_t epoch, const orbelem_t& oe, const nbp_t::param_t& p, const nbp_t::metadata_t& md)
+            {
+                static int var_t_w = 15;
+                static int int_t_w = 7;
+
+                sout.precision(6);
+                sout.setf(ios::right);
+                sout.setf(ios::scientific);
+
+                sout << setw(var_t_w) << epoch << SEP
+                    << setw(int_t_w) << md.id << SEP
+                    << setw(2) << md.body_type << SEP
+                    << setw(var_t_w) << p.mass << SEP
+                    << setw(var_t_w) << p.radius << SEP
+                    << setw(var_t_w) << p.density << SEP
+                    << setw(var_t_w) << oe.sma << SEP
+                    << setw(var_t_w) << oe.ecc << SEP
+                    << setw(var_t_w) << oe.inc << SEP
+                    << setw(var_t_w) << oe.peri << SEP
+                    << setw(var_t_w) << oe.node << SEP
+                    << setw(var_t_w) << oe.mean << endl;
+
+                sout.flush();
+            }
+
         } /* nbp */
 
     } /* file */

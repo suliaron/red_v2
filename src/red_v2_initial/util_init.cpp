@@ -15,21 +15,6 @@
 using namespace std;
 using namespace redutil2;
 
-string create_name(int i, int type)
-{
-    static string body_type_names[] = { "star", "giant", "rocky", "proto", "superpl", "pl", "testp" };
-
-    ostringstream convert;	// stream used for the conversion
-    string i_str;			// string which will contain the number
-    string name;
-
-    convert << i;			// insert the textual representation of 'i' in the characters in the stream
-    i_str = convert.str();  // set 'i_str' to the contents of the stream
-    name = body_type_names[type] + i_str;
-
-    return name;
-}
-
 var_t generate_oe(orbelem_name_t name, oe_dist_t *oe_d)
 {
     var_t result = 0.0;
@@ -176,31 +161,6 @@ template void print_number<uint32_t>(string& path, uint32_t number);
 template void print_number<long>(string& path, long number);
 template void print_number<unsigned long>(string& path, unsigned long number);
 
-void print_oe(string &path, uint32_t n, var_t t, pp_disk_t::sim_data_t *sd)
-{
-    printf("Writing %s to disk .", path.c_str());
-
-    ofstream sout(path.c_str(), ios_base::out);
-    if (sout)
-    {
-        int pcd = 1;
-        for (uint32_t i = 0; i < n; i++)
-        {
-            file::print_oe_record(sout, t, &sd->h_oe[i], &sd->h_p[i], &sd->h_body_md[i]);
-            if (pcd <= (int)((((var_t)(i + 1) / (var_t)n))*100.0))
-            {
-                printf(".");
-                pcd++;
-            }
-        }
-        sout.close();
-        printf(" done\n");
-    }
-    else
-    {
-        throw string("Cannot open " + path + ".");
-    }
-}
 
 void print_oe(std::string &path, uint32_t n, var_t t, nbp_t::metadata_t* md, nbp_t::param_t* p, orbelem_t* oe)
 {
@@ -212,10 +172,10 @@ void print_oe(std::string &path, uint32_t n, var_t t, nbp_t::metadata_t* md, nbp
         int pcd = 1;
         for (uint32_t i = 0; i < n; i++)
         {
-            file::print_oe_record(sout, &oe[i]);
+            file::nbp::print_oe_record(sout, t, oe[i], p[i], md[i]);
             if (pcd <= (int)((((var_t)(i + 1) / (var_t)n))*100.0))
             {
-                printf(".");
+                putchar('.');
                 pcd++;
             }
         }

@@ -17,8 +17,8 @@ public:
 	/*
 		\param device specifies which device will execute the computations
 	*/
-//	void set_PROC_UNIT(PROC_UNIT_desc_t device);
-//	PROC_UNIT_desc_t get_PROC_UNIT() { return PROC_UNIT; }
+    void set_comp_dev(comp_dev_t cd);
+    comp_dev_t get_comp_dev()      { return comp_dev;      }
 
 	void update_counters(uint16_t iter);
 
@@ -45,7 +45,6 @@ public:
 	std::string name;
 
 protected:
-//	void calc_grid(int nData, int threads_per_block);
 	var_t get_max_error(uint32_t n_var);
 	void calc_dt_try(var_t max_err);
 
@@ -61,7 +60,6 @@ protected:
 	uint64_t n_tried_step;
 	uint64_t n_passed_step;
 	uint64_t n_failed_step;                                                                                                                                                                                         
-
 	bool adaptive;               //!< True if the method estimates the error and accordingly adjusts the step-size	
 	var_t tolerance;             //!< The maximum of the allowed local truncation error
 	uint16_t n_order;            //!< The order of the embedded RK formulae
@@ -86,7 +84,6 @@ protected:
 private:
 	void initialize();
 	void create_aliases();
-	void set_computing_device(comp_dev_t comp_dev);
 
 	//! Allocates storage for data on the host and device memory
 	void allocate_storage(       uint32_t n_var);

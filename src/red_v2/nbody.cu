@@ -193,7 +193,9 @@ nbody::~nbody()
 
 void nbody::initialize()
 {
-	h_md = NULL;
+    print_oe = false;
+    
+    h_md = NULL;
 	d_md = NULL;
 	md   = NULL;
 
@@ -256,7 +258,7 @@ void nbody::copy_metadata(copy_direction_t dir)
 		copy_vector_to_host(h_md, d_md, n_obj*sizeof(nbp_t::metadata_t));
 		break;
 	default:
-		throw std::string("Parameter 'dir' is out of range.");
+		throw string("Parameter 'dir' is out of range.");
 	}
 }
 
@@ -384,19 +386,49 @@ void nbody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 
     var3_t* a = (var3_t*)(dy + nv);
 
+    // 1. Calculate the acceleration from the gravitational forces
     // Copy the velocities into dy
     memcpy(dy, v, nv * sizeof(var_t));
 
     // Clear the acceleration array: the += op can be used
 	memset(a, 0, nv *sizeof(var_t));
-	for (uint32_t i = 0; i < n_obj; i++)
+    // -- Calculate the acceleration for the SI and NSI bodies
+    uint2_t snk = { 0, n_si };
+    uint2_t src = { 0, n_si + n_nsi };
+    for (uint32_t i = snk.n1; i < snk.n2; i++)
 	{
-		//var3_t r_ij = {0, 0, 0};
-		for (uint32_t j = i+1; j < n_obj; j++)
+		for (uint32_t j = i+1; j < src.n2; j++)
 		{
             body_body_grav_accel(r[i], r[j], p[i].mass, p[j].mass, a[i], a[j]);
 		}
 	}
+
+    // -- Calculate the acceleration for the NI bodies
+    snk.n1 = n_si + n_nsi, snk.n2 = n_obj;
+    src.n1 = 0, src.n2 = n_si + n_nsi;
+    for (uint32_t i = snk.n1; i < snk.n2; i++)
+    {
+        for (uint32_t j = src.n1; j < src.n2; j++)
+        {
+            body_body_grav_accel(r[i], r[j], p[j].mass, a[i]);
+        }
+    }
+}
+
+inline
+void nbody::body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mj, var3_t& ai)
+{
+    // compute r_ij = r_j - r_i [3 FLOPS] [6 read, 3 write]
+    var3_t r_ij = { rj.x - ri.x, rj.y - ri.y, rj.z - ri.z };
+
+    // compute norm square of d vector [5 FLOPS] [3 read, 1 write]
+    var_t d2 = SQR(r_ij.x) + SQR(r_ij.y) + SQR(r_ij.z);
+    var_t d = sqrt(d2);
+    var_t s = K2 * mj / (d * d2);
+
+    ai.x += s * r_ij.x;
+    ai.y += s * r_ij.y;
+    ai.z += s * r_ij.z;
 }
 
 inline
@@ -423,8 +455,9 @@ void nbody::body_body_grav_accel(const var3_t& ri, const var3_t& rj, var_t mi, v
 
 void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-    static bool first_call = true;
-    static uint32_t last_n_obj = n_obj;
+    static uint32_t last_n_si = 0;
+    static uint32_t last_n_nsi = 0;
+    static uint32_t last_n_ni = 0;
 
     // Number of space and velocity coordinates
     const uint32_t nv = NDIM * n_obj;
@@ -437,16 +470,16 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
     var3_t* a = (var3_t*)(dy + nv);
 
     // 1. Calculate the acceleration from the gravitational forces
-    if (first_call || last_n_obj != n_obj)
+    if (last_n_si != n_si)
 	{
-        printf("Searching for the optimal thread number ");
-        first_call = false;
-        last_n_obj = n_obj;
+        printf("Searching for the optimal thread number for SI type bodies ");
+        last_n_si = n_si;
 
         float min_dt = 1.0e10;
         for (unsigned int i = 16; i < 512; i += 16)
         {
             putc('.', stdout);
+            // Clear the acceleration array: the += op can be used
             cudaMemset(a, 0, n_obj * sizeof(var3_t));
             uint2_t snk = { 0, n_si };
             uint2_t src = { 0, n_si + n_nsi };
@@ -458,25 +491,27 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
                 n_tpb_si = i;
             }
         }
-        printf(" Done.\nOptimal thread number = %3d.\n", n_tpb_si);
+        printf(" Done. Optimal thread number = %3d.\n", n_tpb_si);
         // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
         // Copy the velocities into dy
         CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
     }
     else
     {
-        set_kernel_launch_param(n_obj, n_tpb_si, grid, block);
-
-        cudaMemset(a, 0, n_obj * sizeof(var3_t));
-        //kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
         uint2_t snk = { 0, n_si };
         uint2_t src = { 0, n_si + n_nsi };
+
+        set_kernel_launch_param(snk.n2 - snk.n1, n_tpb_si, grid, block);
+
+        cudaMemset(a, 0, n_obj * sizeof(var3_t));
+        //float dt_GPU = kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(n_obj, d_md, r, p, a);
         float dt_GPU = gpu_calc_grav_accel_tile(stage, snk, src, n_tpb_si, curr_t, r, p, a);
         // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
         // Copy the velocities into dy
         CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));
         CUDA_CHECK_ERROR();
     }
+
     // ------- END -------
 
     // 2. Calculate the accelerations from other forces
@@ -490,7 +525,7 @@ float nbody::gpu_calc_grav_accel_naive(uint16_t stage, uint2_t snk, uint2_t src,
     CUDA_SAFE_CALL(cudaEventCreate(&start));
     CUDA_SAFE_CALL(cudaEventCreate(&stop));
 
-    set_kernel_launch_param(n_obj, n_tpb, grid, block);
+    set_kernel_launch_param(snk.n2 - snk.n1, n_tpb, grid, block);
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
     kernel_nbody::calc_grav_accel_naive <<< grid, block >>>(snk, src, md, r, p, a);
 
@@ -513,7 +548,7 @@ float nbody::gpu_calc_grav_accel_tile(uint16_t stage, uint2_t snk, uint2_t src, 
     CUDA_SAFE_CALL(cudaEventCreate(&start));
     CUDA_SAFE_CALL(cudaEventCreate(&stop));
 
-    set_kernel_launch_param(n_obj, n_tpb, grid, block);
+    set_kernel_launch_param(snk.n2 - snk.n1, n_tpb, grid, block);
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
     size_t sh_mem_size = n_tpb * sizeof(var3_t);
     kernel_nbody::calc_grav_accel_tile <<< grid, block, sh_mem_size >>>(snk, src, md, r, p, a);
@@ -727,7 +762,7 @@ void nbody::load_binary(ifstream& input)
     input.read((char*)h_y, NVPO * n_obj * sizeof(var_t));
 }
 
-void nbody::print_solution(std::string& path_si, std::string& path_sd, data_rep_t repres)
+void nbody::print_solution(string& path_si, string& path_sd, data_rep_t repres)
 {
 	ofstream sout;
 
@@ -766,9 +801,39 @@ void nbody::print_solution(std::string& path_si, std::string& path_sd, data_rep_
 	}
 	file::nbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, (nbp_t::param_t*)h_p, h_y, repres);
 	sout.close();
+
+    if (print_oe)
+    {
+        string dir = file::get_directory(path_sd);
+        string fn = file::get_filename_without_ext(path_sd) + "_oe.txt";
+        string path_oe = file::combine_path(dir, fn);
+        sout.open(path_oe.c_str(), ios::out | ios::app);
+        if (!sout)
+        {
+            throw string("Cannot open " + path_oe + ".");
+        }
+
+        // Number of space and velocity coordinates
+        const uint32_t nv = NDIM * n_obj;
+        // Create aliases
+        const var3_t* r = (var3_t*)h_y;
+        const var3_t* v = (var3_t*)(h_y + nv);
+        const nbp_t::param_t* p = (nbp_t::param_t*)h_p;
+        orbelem_t oe = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+        for (uint32_t i = 1; i < n_obj; i++)
+        {
+            var_t mu = K2 * (p[0].mass + p[i].mass);
+            var3_t dr = { r[i].x - r[0].x, r[i].y - r[0].y, r[i].z - r[0].z };
+            var3_t dv = { v[i].x - v[0].x, v[i].y - v[0].y, v[i].z - v[0].z };
+            tools::calc_oe(mu, &dr, &dv, &oe);
+            file::nbp::print_oe_record(sout, t, oe, p[i], h_md[i]);
+        }
+        sout.close();
+    }
 }
 
-void nbody::print_dump(std::string& path_si, std::string& path_sd)
+void nbody::print_dump(string& path_si, string& path_sd)
 {
     ofstream sout;
 
