@@ -491,7 +491,7 @@ void nbody::gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
                 n_tpb_si = i;
             }
         }
-        printf(" Done. Optimal thread number = %3d.\n", n_tpb_si);
+        printf(" [%3d] done.\n", n_tpb_si);
         // TODO: Move this line next to the kernel invocation since the kernel execution and data copy can be performed simultaneously
         // Copy the velocities into dy
         CUDA_SAFE_CALL(cudaMemcpy(dy, v, nv * sizeof(var_t), cudaMemcpyDeviceToDevice));

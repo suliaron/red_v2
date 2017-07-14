@@ -103,7 +103,7 @@ void int_rungekutta4::calc_ytemp(uint16_t stage)
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_a + stage * a_col;
-		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.get_n_var(), comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(ytemp, f.y, d_k, coeff, stage, f.get_n_var(), comp_dev.id_dev);
 	}
 	else
 	{
@@ -117,7 +117,7 @@ void int_rungekutta4::calc_y_np1()
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
 		var_t* coeff = d_bh;
-		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 4, f.get_n_var(), comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(f.yout, f.y, d_k, coeff, 4, f.get_n_var(), comp_dev.id_dev);
 	}
 	else
 	{
@@ -130,7 +130,7 @@ void int_rungekutta4::calc_error(uint32_t n)
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-        gpu_calc_rk4_error(err, k[3], k[4], n, comp_dev.id_dev, optimize);
+        gpu_calc_rk4_error(err, k[3], k[4], n, comp_dev.id_dev);
     }
 	else
 	{
@@ -148,17 +148,6 @@ var_t int_rungekutta4::step()
 	static const uint16_t n_a = sizeof(int_rungekutta4::a) / sizeof(var_t);
 	static const uint16_t n_bh = sizeof(int_rungekutta4::bh) / sizeof(var_t);
 	static bool first_call = true;
-	static uint32_t n_var = 0;
-
-    if (n_var != f.get_n_var())
-	{
-		optimize = true;
-		n_var = f.get_n_var();
-	}
-	else
-	{
-		optimize = false;
-	}
 
 	uint16_t stage = 0;
 	t = f.t;

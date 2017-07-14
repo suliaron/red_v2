@@ -32,7 +32,7 @@ void euler::calc_y_np1()
 {
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.get_n_var(), comp_dev.id_dev, optimize);
+		gpu_calc_lin_comb_s(f.yout, f.y, k[0], dt_try, f.get_n_var(), comp_dev.id_dev);
 	}
 	else
 	{
@@ -42,20 +42,9 @@ void euler::calc_y_np1()
 
 var_t euler::step()
 {
-	static uint32_t n_var = 0;
-
-    if (n_var != f.get_n_var())
-	{
-		optimize = true;
-		n_var = f.get_n_var();
-	}
-	else
-	{
-		optimize = false;
-	}
-
     uint16_t stage = 0;
-	t = f.t;
+
+    t = f.t;
 	// Calculate initial differentials and store them into k
 	f.calc_dy(stage, t, f.y, k[stage]);
 

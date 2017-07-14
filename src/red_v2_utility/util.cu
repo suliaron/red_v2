@@ -635,21 +635,27 @@ void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd)
 }
 
 // Date of creation: 2016.11.22.
-// Last edited: 
+// Last edited: 2017.07.14.
 // Status:
-void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev, bool optimize)
+void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint32_t n_var, int id_dev)
 {
 	static uint16_t n_tpb = 256;
-	static bool first_call = true;
+    static uint32_t last_n_var = 0;
 
 	dim3 grid;
 	dim3 block;
 
-	if (optimize || first_call)
+    bool optimize = false;
+    if (last_n_var != n_var)
+    {
+        last_n_var = n_var;
+        optimize = true;
+    }
+    
+    if (optimize)
 	{
-		first_call = false;
-
-		cudaDeviceProp prop;
+        printf("Searching for the optimal thread number [%s] ", __FUNCTION__);
+        cudaDeviceProp prop;
 		cudaEvent_t start, stop;
 
         CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
@@ -660,7 +666,8 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 		uint16_t d_nt = prop.warpSize / 2;
 		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
-			set_kernel_launch_param(n_var, nt, grid, block);
+            putc('.', stdout);
+            set_kernel_launch_param(n_var, nt, grid, block);
 
 			CUDA_SAFE_CALL(cudaEventRecord(start));
 			red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, f, c, n_var);
@@ -675,10 +682,9 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
-	}
+        printf(" [%3d] done.\n", n_tpb);
+    }
 	else
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
@@ -687,19 +693,25 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* c, var_t f, uint
 	}
 }
 
-void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev, bool optimize)
+void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const var_t* coeff, uint16_t n_vct, uint32_t n_var, int id_dev)
 {
 	static uint16_t n_tpb = 256;
-	static bool first_call = true;
+    static uint32_t last_n_var = 0;
 
 	dim3 grid;
 	dim3 block;
 
-	if (optimize || first_call)
-	{
-		first_call = false;
+    bool optimize = false;
+    if (last_n_var != n_var)
+    {
+        last_n_var = n_var;
+        optimize = true;
+    }
 
-		cudaDeviceProp prop;
+	if (optimize)
+	{
+        printf("Searching for the optimal thread number [%s] ", __FUNCTION__);
+        cudaDeviceProp prop;
 		cudaEvent_t start, stop;
 
         CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
@@ -710,7 +722,8 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 		uint16_t d_nt = prop.warpSize / 2;
 		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
-			set_kernel_launch_param(n_var, nt, grid, block);
+            putc('.', stdout);
+            set_kernel_launch_param(n_var, nt, grid, block);
 
             CUDA_SAFE_CALL(cudaEventRecord(start));
 			red_kernel::calc_lin_comb_s<<<grid, block>>>(a, b, c, coeff, n_vct, n_var);
@@ -725,10 +738,9 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
-	}
+        printf(" [%3d] done.\n", n_tpb);
+    }
 	else
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
@@ -738,19 +750,25 @@ void gpu_calc_lin_comb_s(var_t* a, const var_t* b, const var_t* const *c, const 
 }
 
 // Calculate the error for the Runge-Kutta 4 method: a = |k4 - k5|
-void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_var, int id_dev, bool optimize)
+void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_var, int id_dev)
 {
 	static uint16_t n_tpb = 256;
-	static bool first_call = true;
+    static uint32_t last_n_var = 0;
 
 	dim3 grid;
 	dim3 block;
 
-	if (optimize || first_call)
-	{
-		first_call = false;
+    bool optimize = false;
+    if (last_n_var != n_var)
+    {
+        last_n_var = n_var;
+        optimize = true;
+    }
 
-		cudaDeviceProp prop;
+    if (optimize)
+	{
+        printf("Searching for the optimal thread number [%s] ", __FUNCTION__);
+        cudaDeviceProp prop;
 		cudaEvent_t start, stop;
 
         CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
@@ -761,7 +779,8 @@ void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_v
 		uint16_t d_nt = prop.warpSize / 2;
 		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
-			set_kernel_launch_param(n_var, nt, grid, block);
+            putc('.', stdout);
+            set_kernel_launch_param(n_var, nt, grid, block);
 
 			CUDA_SAFE_CALL(cudaEventRecord(start));
             red_kernel::calc_rk4_error<<<grid, block>>>(a, k4, k5, n_var);
@@ -776,10 +795,9 @@ void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_v
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
-	}
+        printf(" [%3d] done.\n", n_tpb);
+    }
 	else
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
@@ -789,19 +807,25 @@ void gpu_calc_rk4_error(var_t* a, const var_t* k4, const var_t* k5, uint32_t n_v
 }
 
 // Calculate the error for the Runge-Kutta 5 method: a = |k5 - k6|
-void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_var, int id_dev, bool optimize)
+void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_var, int id_dev)
 {
 	static uint16_t n_tpb = 256;
-	static bool first_call = true;
+    static uint32_t last_n_var = 0;
 
 	dim3 grid;
 	dim3 block;
 
-	if (optimize || first_call)
-	{
-		first_call = false;
+    bool optimize = false;
+    if (last_n_var != n_var)
+    {
+        last_n_var = n_var;
+        optimize = true;
+    }
 
-		cudaDeviceProp prop;
+    if (optimize)
+	{
+        printf("Searching for the optimal thread number [%s] ", __FUNCTION__);
+        cudaDeviceProp prop;
 		cudaEvent_t start, stop;
 
         CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
@@ -812,7 +836,8 @@ void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_v
 		uint16_t d_nt = prop.warpSize / 2;
 		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
-			set_kernel_launch_param(n_var, nt, grid, block);
+            putc('.', stdout);
+            set_kernel_launch_param(n_var, nt, grid, block);
 
 			CUDA_SAFE_CALL(cudaEventRecord(start));
             red_kernel::calc_rk5_error<<<grid, block>>>(a, k5, k6, n_var);
@@ -827,10 +852,9 @@ void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_v
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
-	}
+        printf(" [%3d] done.\n", n_tpb);
+    }
 	else
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);
@@ -840,19 +864,25 @@ void gpu_calc_rk5_error(var_t* a, const var_t* k5, const var_t* k6, uint32_t n_v
 }
 
 // Calculate the error for the Runge-Kutta 7 method: a = |k1 + k11 - k12 - k13|
-void gpu_calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t* k12, const var_t* k13, uint32_t n_var, int id_dev, bool optimize)
+void gpu_calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t* k12, const var_t* k13, uint32_t n_var, int id_dev)
 {
 	static uint16_t n_tpb = 256;
-	static bool first_call = true;
+    static uint32_t last_n_var = 0;
 
 	dim3 grid;
 	dim3 block;
 
-	if (optimize || first_call)
-	{
-		first_call = false;
+    bool optimize = false;
+    if (last_n_var != n_var)
+    {
+        last_n_var = n_var;
+        optimize = true;
+    }
 
-		cudaDeviceProp prop;
+    if (optimize)
+    {
+        printf("Searching for the optimal thread number [%s] ", __FUNCTION__);
+        cudaDeviceProp prop;
 		cudaEvent_t start, stop;
 
         CUDA_SAFE_CALL(cudaGetDeviceProperties(&prop, id_dev));
@@ -863,7 +893,8 @@ void gpu_calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t
 		uint16_t d_nt = prop.warpSize / 2;
 		for (uint16_t nt = d_nt; nt <= prop.maxThreadsPerBlock / 2; nt += d_nt)
 		{
-			set_kernel_launch_param(n_var, nt, grid, block);
+            putc('.', stdout);
+            set_kernel_launch_param(n_var, nt, grid, block);
 
 			CUDA_SAFE_CALL(cudaEventRecord(start));
             red_kernel::calc_rk7_error<<<grid, block>>>(a, k1, k11, k12, k13, n_var);
@@ -878,10 +909,9 @@ void gpu_calc_rk7_error(var_t* a, const var_t* k1, const var_t* k11, const var_t
 				min_GPU_DT = GPU_DT;
 				n_tpb = nt;
 			}
-			//printf("%4u %10.6f [ms]\n", nt, GPU_DT);
 		}
-		//printf("\n%4u %10.6f [ms]\n", n_tpb, min_GPU_DT);
-	}
+        printf(" [%3d] done.\n", n_tpb);
+    }
 	else
 	{
 		set_kernel_launch_param(n_var, n_tpb, grid, block);

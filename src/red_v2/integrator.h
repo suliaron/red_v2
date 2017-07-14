@@ -40,7 +40,7 @@ public:
 
 	ode& f;
 
-    bool optimize;               //!< If true than perform optimization
+    //bool optimize;               //!< If true than perform optimization
 	bool error_check_for_tp;	 //!< Check the error also for the test particles
 	std::string name;
 

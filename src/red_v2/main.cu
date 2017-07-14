@@ -201,6 +201,7 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	/* 
 	 * Main cycle
 	 */
+    //comp_dev_t cd = opt->comp_dev;
     var_t length = 0.0;
 	while (length <= opt->param->simulation_length) //(f->t <= opt->param->simulation_length)
 	{
@@ -209,6 +210,22 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
         //    nbody* nb = (nbody*)f;
         //    nb->chk_coll(opt->param->threshold[THRESHOLD_RADII_ENHANCE_FACTOR]);
         //}
+#if 1
+        if (PROC_UNIT_CPU == opt->comp_dev.proc_unit)
+        {
+            //printf("The computing device is setting to GPU ... ");
+            opt->comp_dev.proc_unit = PROC_UNIT_GPU;
+            intgr->set_comp_dev(opt->comp_dev);
+            //printf("done.\n");
+        }
+        else
+        {
+            //printf("The computing device is setting to CPU ... ");
+            opt->comp_dev.proc_unit = PROC_UNIT_CPU;
+            intgr->set_comp_dev(opt->comp_dev);
+            //printf("done.\n");
+        }
+#endif
 
 		// make the integration step, and measure the time it takes
 #ifdef _WIN32
