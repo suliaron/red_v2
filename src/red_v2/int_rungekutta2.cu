@@ -50,12 +50,12 @@ int_rungekutta2::~int_rungekutta2()
 
 void int_rungekutta2::allocate_Butcher_tableau()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&d_a, sizeof(a));
+	ALLOCATE_DEVICE_ARRAY((void**)&d_a, sizeof(a));
 }
 
 void int_rungekutta2::deallocate_Butcher_tableau()
 {
-	FREE_DEVICE_VECTOR((void**)&d_a);
+	FREE_DEVICE_ARRAY((void**)&d_a);
 }
 
 void int_rungekutta2::check_Butcher_tableau()
@@ -121,7 +121,7 @@ var_t int_rungekutta2::step()
 	}
 	if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	{
-		copy_vector_to_device(d_a, h_a, sizeof(h_a));
+		copy_array_to_device(d_a, h_a, sizeof(h_a));
 		// TODO: constant memory is not working on NVIDIA GeForce GT 620.
 		//redutil2::copy_constant_to_device(dc_a, _a, sizeof(_a));
 	}

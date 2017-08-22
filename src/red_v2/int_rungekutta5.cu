@@ -94,14 +94,14 @@ int_rungekutta5::~int_rungekutta5()
 
 void int_rungekutta5::allocate_Butcher_tableau()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&d_a,  sizeof(a));
-	ALLOCATE_DEVICE_VECTOR((void**)&d_bh, sizeof(bh));
+	ALLOCATE_DEVICE_ARRAY((void**)&d_a,  sizeof(a));
+	ALLOCATE_DEVICE_ARRAY((void**)&d_bh, sizeof(bh));
 }
 
 void int_rungekutta5::deallocate_Butcher_tableau()
 {
-	FREE_DEVICE_VECTOR((void**)&d_a);
-	FREE_DEVICE_VECTOR((void**)&d_bh);
+	FREE_DEVICE_ARRAY((void**)&d_a);
+	FREE_DEVICE_ARRAY((void**)&d_bh);
 }
 
 void int_rungekutta5::check_Butcher_tableau()
@@ -223,8 +223,8 @@ var_t int_rungekutta5::step()
 		}
 	    if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	    {
-			copy_vector_to_device(d_a,  h_a,  sizeof(h_a) );
-			copy_vector_to_device(d_bh, h_bh, sizeof(h_bh));
+			copy_array_to_device(d_a,  h_a,  sizeof(h_a) );
+			copy_array_to_device(d_bh, h_bh, sizeof(h_bh));
 	    }
 
 		for (stage = 1; stage < 6; stage++)

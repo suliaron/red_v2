@@ -11,13 +11,12 @@ using namespace std;
 using namespace redutil2;
 
 
-rtbp2D::rtbp2D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev) :
-	ode(2, 1, 4, n_ppo, 5, 1, comp_dev)
+rtbp2D::rtbp2D(string& path_si, string& path_sd, uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev) :
+	ode(2, 1, 4, n_ppo, 5, 1, omd_size, comp_dev)
 {
 	name = "Regularized 2D two-body problem";
 
 	initialize();
-	allocate_storage();
 
     load_solution_info(path_si);
     load_solution_data(path_sd);
@@ -27,69 +26,13 @@ rtbp2D::rtbp2D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp
 }
 
 rtbp2D::~rtbp2D()
-{
-	deallocate_storage();
-}
+{ }
 
 void rtbp2D::initialize()
 {
-	h_md = NULL;
-	d_md = NULL;
-	md   = NULL;
-}
-
-void rtbp2D::allocate_storage()
-{
-	allocate_host_storage();
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		allocate_device_storage();
-	}
-}
-
-void rtbp2D::allocate_host_storage()
-{
-	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void rtbp2D::allocate_device_storage()
-{
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void rtbp2D::deallocate_storage()
-{
-	//NOTE : First always release the DEVICE memory
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		deallocate_device_storage();
-	}
-	deallocate_host_storage();
-}
-
-void rtbp2D::deallocate_host_storage()
-{
-	FREE_HOST_VECTOR((void **)&(h_md));
-}
-
-void rtbp2D::deallocate_device_storage()
-{
-	FREE_DEVICE_VECTOR((void **)&(d_md));
-}
-
-void rtbp2D::copy_metadata(copy_direction_t dir)
-{
-	switch (dir)
-	{
-	case COPY_DIRECTION_TO_DEVICE:
-		copy_vector_to_device(d_md, h_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	case COPY_DIRECTION_TO_HOST:
-		copy_vector_to_host(h_md, d_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	default:
-		throw std::string("Parameter 'dir' is out of range.");
-	}
+    h_md = (tbp_t::metadata_t*)h_omd;
+    d_md = (tbp_t::metadata_t*)d_omd;
+      md = (tbp_t::metadata_t*)omd;
 }
 
 void rtbp2D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
@@ -112,7 +55,7 @@ void rtbp2D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* d
 void rtbp2D::calc_integral()
 {
 	static bool first_call = true;
-	static var_t mu = h_p[0];
+	static var_t mu = h_par[0];
 
 	var2_t u  = {h_y[0], h_y[1]};
 	var2_t up = {h_y[2], h_y[3]};
@@ -227,7 +170,7 @@ void rtbp2D::load_ascii(ifstream& input)
 	// id
 	input >> h_md[0].id;
 	// mu = k^2*(m1 + m2)
-	input >> h_p[0];
+	input >> h_par[0];
 	// u1 position
 	input >> h_y[0];
 	// u2 position
@@ -286,7 +229,7 @@ void rtbp2D::print_solution(std::string& path_si, std::string& path_sd, data_rep
 	{
 		throw string("Cannot open " + path_sd + ".");
 	}
-	file::rtbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y, 2, repres);
+	file::rtbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, h_par, h_y, 2, repres);
 	sout.close();
 }
 

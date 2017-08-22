@@ -11,78 +11,24 @@ using namespace std;
 using namespace redutil2;
 
 
-tbp3D::tbp3D(uint16_t n_ppo, comp_dev_t comp_dev) :
-	ode(3, 1, 6, n_ppo, comp_dev)
+tbp3D::tbp3D(uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev) :
+	ode(3, 1, 6, n_ppo, omd_size, comp_dev)
 {
 	name = "Singular 3D two-body problem";
 
 	initialize();
-	allocate_storage();
 }
 
 tbp3D::~tbp3D()
-{
-	deallocate_storage();
-}
+{ }
 
 void tbp3D::initialize()
 {
-	h_md = NULL;
-	h    = 0.0;
-}
-
-void tbp3D::allocate_storage()
-{
-	allocate_host_storage();
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		allocate_device_storage();
-	}
-}
-
-void tbp3D::allocate_host_storage()
-{
-	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void tbp3D::allocate_device_storage()
-{
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void tbp3D::deallocate_storage()
-{
-	//NOTE : First always release the DEVICE memory	
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		deallocate_device_storage();
-	}
-	deallocate_host_storage();
-}
-
-void tbp3D::deallocate_host_storage()
-{
-	FREE_HOST_VECTOR((void **)&(h_md));
-}
-
-void tbp3D::deallocate_device_storage()
-{
-	FREE_DEVICE_VECTOR((void **)&(h_md));
-}
-
-void tbp3D::copy_metadata(copy_direction_t dir)
-{
-	switch (dir)
-	{
-	case COPY_DIRECTION_TO_DEVICE:
-		copy_vector_to_device(d_md, h_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	case COPY_DIRECTION_TO_HOST:
-		copy_vector_to_host(h_md, d_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	default:
-		throw std::string("Parameter 'dir' is out of range.");
-	}
+    h_md = (tbp_t::metadata_t*)h_omd;
+    d_md = (tbp_t::metadata_t*)d_omd;
+      md = (tbp_t::metadata_t*)omd;
+    
+    h    = 0.0;
 }
 
 void tbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
@@ -105,7 +51,7 @@ void tbp3D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 void tbp3D::calc_integral()
 {
 	static bool first_call = true;
-	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	var_t r  = sqrt( SQR(h_y[0]) + SQR(h_y[1]) + SQR(h_y[2]) );
 	var_t v2 = SQR(h_y[3]) + SQR(h_y[4]) + SQR(h_y[5]);
@@ -120,7 +66,7 @@ void tbp3D::calc_integral()
 
 void tbp3D::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	var_t r = sqrt( SQR(y_temp[0]) + SQR(y_temp[1]) + SQR(y_temp[2]) );
 	var_t r3 = r*r*r;
@@ -178,7 +124,7 @@ void tbp3D::load(string& path)
 
 void tbp3D::load_ascii(ifstream& input)
 {
-	tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	var_t _t;
 	for (uint32_t i = 0; i < n_obj; i++)
@@ -269,7 +215,7 @@ void tbp3D::print_solution_ascii(ofstream& sout)
 		for (uint16_t j = 0; j < n_ppo; j++)
 		{
 			uint32_t param_idx = i * n_ppo + j;
-			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+			sout << setw(VAR_T_W) << h_par[param_idx] << SEP;
 		}
 		// Print the variables for each object
 		for (uint16_t j = 0; j < n_vpo; j++)

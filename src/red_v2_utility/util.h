@@ -18,42 +18,32 @@ namespace redutil2
 	int get_id_fastest_cuda_device();
 	int get_n_cuda_device();
 	std::string get_device_name(int id_dev);
+    void set_device(int id_of_target_dev, std::ostream& sout);
 
 	void set_kernel_launch_param(uint32_t n_data, uint16_t n_tpb, dim3& grid, dim3& block);
 
-	void allocate_host_vector(  void **ptr, size_t size,           const char *file, int line);
-	void allocate_device_vector(void **ptr, size_t size,           const char *file, int line);
-	void allocate_vector(       void **ptr, size_t size, bool cpu, const char *file, int line);
+	void allocate_host_array(  void **ptr, size_t size,           const char *file, int line);
+	void allocate_device_array(void **ptr, size_t size,           const char *file, int line);
+    void free_host_array(void **ptr, const char *file, int line);
+    void free_device_array(void **ptr, const char *file, int line);
 
-	#define ALLOCATE_HOST_VECTOR(  ptr, size)      (allocate_host_vector(  ptr, size,      __FILE__, __LINE__))
-	#define ALLOCATE_DEVICE_VECTOR(ptr, size)      (allocate_device_vector(ptr, size,      __FILE__, __LINE__))
-	#define ALLOCATE_VECTOR(       ptr, size, cpu) (allocate_vector(       ptr, size, cpu, __FILE__, __LINE__))
-
-	void free_host_vector(  void **ptr,           const char *file, int line);
-	void free_device_vector(void **ptr,           const char *file, int line);
-	//void free_vector(       void **ptr, bool cpu, const char *file, int line);
-
-	#define FREE_HOST_VECTOR(  ptr)      (free_host_vector(  ptr,      __FILE__, __LINE__))
-	#define FREE_DEVICE_VECTOR(ptr)      (free_device_vector(ptr,      __FILE__, __LINE__))
-	//#define FREE_VECTOR(       ptr, cpu) (free_vector(       ptr, cpu, __FILE__, __LINE__))
-
-	void allocate_host_storage(pp_disk_t::sim_data_t *sd, int n);
-	void allocate_device_storage(pp_disk_t::sim_data_t *sd, int n);
-
-	void deallocate_host_storage(pp_disk_t::sim_data_t *sd);
-	void deallocate_device_storage(pp_disk_t::sim_data_t *sd);
-
-	void copy_vector_to_device(void* dst, const void *src, size_t count);
-	void copy_vector_to_host(  void* dst, const void *src, size_t count);
-	void copy_vector_d2d(      void* dst, const void *src, size_t count);
+	#define ALLOCATE_HOST_ARRAY(  ptr, size)    (allocate_host_array(  ptr, size, __FILE__, __LINE__))
+	#define ALLOCATE_DEVICE_ARRAY(ptr, size)    (allocate_device_array(ptr, size, __FILE__, __LINE__))
+	#define FREE_HOST_ARRAY(  ptr)              (free_host_array(  ptr, __FILE__, __LINE__))
+	#define FREE_DEVICE_ARRAY(ptr)              (free_device_array(ptr, __FILE__, __LINE__))
+	
+	void copy_array_to_device(void* dst, const void *src, size_t count);
+	void copy_array_to_host(  void* dst, const void *src, size_t count);
+	void copy_array_d2d(      void* dst, const void *src, size_t count);
 
 	void copy_constant_to_device(const void* dst, const void *src, size_t count);
 
+    void prn(const var_t* a);
+    void prn(const var3_t* a);
+    void prn(const nbp_t::param_t* a);
+    void prn(const nbp_t::metadata_t* a);
 
-	void set_device(int id_of_target_dev, std::ostream& sout);
 	void print_array(std::string path, std::string comment, uint32_t n, var_t *data, mem_loc_t);
-
-	void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd);
 
 	//! Calculate the special linear combination of two vectors, a[i] = b[i] + f*c[i]
 	/*

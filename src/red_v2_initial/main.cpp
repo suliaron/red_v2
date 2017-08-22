@@ -163,7 +163,7 @@ namespace model
 	         *     Mean solar day    |           D | time
 	         */
             
-            ALLOCATE_HOST_VECTOR((void**)&(y), 2 * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&(y), 2 * sizeof(var_t));
 
 			// Set the parameters of the problem
             p.mu  = constants::Gauss2 * (1.0 + 1.0);
@@ -178,7 +178,7 @@ namespace model
 
             print(dir, filename);
 
-            FREE_HOST_VECTOR((void **)&(y));
+            FREE_HOST_ARRAY((void **)&(y));
         }
     } /* namespace tbp1D */
 
@@ -239,7 +239,7 @@ namespace model
 	         *     Mean solar day    |           D | time
 	         */
             
-            ALLOCATE_HOST_VECTOR((void**)&(y), 4 * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&(y), 4 * sizeof(var_t));
 
 			// Set the parameter of the problem
             p.mu = constants::Gauss2 * (1.0 + 1.0);
@@ -262,7 +262,7 @@ namespace model
 
             print(dir, filename);
 
-            FREE_HOST_VECTOR((void **)&(y));
+            FREE_HOST_ARRAY((void **)&(y));
         }
 	} /* namespace tbp2D */
 
@@ -323,7 +323,7 @@ namespace model
 	         *     Mean solar day    |           D | time
 	         */
             
-            ALLOCATE_HOST_VECTOR((void**)&(y), 3 * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&(y), 3 * sizeof(var_t));
 
 			// Set the parameters of the problem
             p.mu  = constants::Gauss2 * (1.0 + 1.0);
@@ -344,7 +344,7 @@ namespace model
 
             print(dir, filename);
 
-            FREE_HOST_VECTOR((void **)&(y));
+            FREE_HOST_ARRAY((void **)&(y));
         } /* create() */
     } /* namespace tbp1D */
 
@@ -405,7 +405,7 @@ namespace model
 	         *     Mean solar day    |           D | time
 	         */
             
-            ALLOCATE_HOST_VECTOR((void**)&(y), 5 * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&(y), 5 * sizeof(var_t));
 
 			// Set the parameters of the problem
             p.mu = constants::Gauss2 * (1.0 + 1.0);
@@ -437,7 +437,7 @@ namespace model
 
             print(dir, filename);
 
-            FREE_HOST_VECTOR((void **)&(y));
+            FREE_HOST_ARRAY((void **)&(y));
         } /* create() */
     } /* namespace tbp2D */
 
@@ -505,9 +505,9 @@ namespace model
         {
 			uint32_t n_var = 6 * n_obj;
 			uint32_t n_par = n_obj;
-            ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
-			ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
-			ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+            ALLOCATE_HOST_ARRAY((void**)&y,  n_var * sizeof(var_t));
+			ALLOCATE_HOST_ARRAY((void**)&p,  n_par * sizeof(nbp_t::param_t));
+			ALLOCATE_HOST_ARRAY((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
 			srand((unsigned int)time(NULL));
 			// Set the parameters of the problem
@@ -537,121 +537,120 @@ namespace model
 
             print(dir, filename, n_obj);
 
-            FREE_HOST_VECTOR((void **)&y);
-			FREE_HOST_VECTOR((void **)&p);
-			FREE_HOST_VECTOR((void **)&md);
+            FREE_HOST_ARRAY((void **)&y);
+			FREE_HOST_ARRAY((void **)&p);
+			FREE_HOST_ARRAY((void **)&md);
         }
 
-        void ceate_disk(string& dir, string& filename, uint32_t n_obj)
+        void ceate_disk(string& dir, string& filename, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni)
         {
+            const uint32_t n_obj = n_si + n_nsi + n_ni;
+            const uint32_t n_var = 6 * n_obj;
+            const uint32_t n_par = (sizeof(nbp_t::param_t) / sizeof(var_t)) * n_obj;
+
+            // Epoch for the disk's state
+            t0 = 0.0;
+            oe_dist_t oe_d;
+            pp_dist_t pp_d;
+
+            ALLOCATE_HOST_ARRAY((void**)&oe, n_obj * sizeof(orbelem_t));
+            ALLOCATE_HOST_ARRAY((void**)&y,  n_var * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&p,  n_obj * sizeof(nbp_t::param_t));
+            ALLOCATE_HOST_ARRAY((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+
+            uint32_t bodyIdx = 0;
+            uint32_t bodyId = 1;
+
+            create_star(n_obj, bodyIdx, bodyId, 1.0, constants::SolarRadiusToAu, md, p, y);
+
             uint32_t seed = (uint32_t)time(NULL);
             cout << "The seed number is " << seed << endl;
             // The pseudo-random number generator is initialized using the argument passed as seed.
             // Used by the subsequent rand() function calls
             srand(seed);
 
-            // Epoch for the disk's state
-            t0 = 0.0;
-            const var_t m0 = 1.0;  //! Mass of the central star
-            const var_t R0 = 1.0 * constants::SolarRadiusToAu;
-            oe_dist_t oe_d;
-            pp_dist_t pp_d;
-
-            oe_d.item[ORBELEM_NAME_SMA] = new uniform_distribution(rand(), 1.0, 2.0);
-            // If the distribution is NULL than the corresponding orbital element is zero
-            oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.3);
-            //oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.0);
-            oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
-            //oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 0.0);
-            oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
-
-            pp_d.item[PP_NAME_DENSITY] = new uniform_distribution(rand(), 2.0 * constants::GramPerCm3ToSolarPerAu3, 2.0 * constants::GramPerCm3ToSolarPerAu3);
-            pp_d.item[PP_NAME_MASS   ] = new uniform_distribution(rand(), 1.0e2*constants::CeresToSolar, 1.0e2*constants::CeresToSolar);
-
-            // Increase n_obj by one to include the central body
-            n_obj++;
-            uint32_t n_var = 6 * n_obj;
-            uint32_t n_par = (sizeof(nbp_t::param_t) / sizeof(var_t)) * n_obj;
-            ALLOCATE_HOST_VECTOR((void**)&oe, n_obj * sizeof(orbelem_t));
-            ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
-            ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
-            ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
-
+            var_t min_P = DBL_MAX;
+            // Create the disk of self-interacting bodies
+            if (1 < n_si)
             {
-                nbp_t::param_t param = { 0.0, 0.0, 0.0 };
-                nbp_t::metadata_t body_md = { 0, 0, 0, true, false, 0.0 };
-                orbelem_t _oe = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-                var3_t rVec = { 0.0, 0.0, 0.0 };
-                var3_t vVec = { 0.0, 0.0, 0.0 };
+                // If the distribution is NULL than the corresponding orbital element is zero
+                oe_d.item[ORBELEM_NAME_SMA] = new uniform_distribution(rand(), 1.0, 2.0);
+                oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.01);
+                oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.005);
+                oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+                oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+                oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
 
-                // The id of each body must be larger than 0 in order to indicate inactive body with negative id 
-                // (ie. zero is not good)
-                uint32_t bodyIdx = 0;
-                uint32_t bodyId = 1;
-                var_t min_P = DBL_MAX;
+                pp_d.item[PP_NAME_DENSITY] = new uniform_distribution(rand(), 2.0 * constants::GramPerCm3ToSolarPerAu3, 3.0 * constants::GramPerCm3ToSolarPerAu3);
+                pp_d.item[PP_NAME_MASS] = new uniform_distribution(rand(), constants::CeresToSolar, 10.0 * constants::CeresToSolar);
 
-                for (uint32_t i = 0; i < n_obj; i++, bodyIdx++, bodyId++)
+                min_P = create_disk(n_obj, n_si-1, BODY_TYPE_GIANTPLANET, bodyIdx, bodyId, oe_d, pp_d, md, p, oe, y);
+
+                for (int i = 0; i < ORBELEM_NAME_N; i++)
                 {
-                    body_md.id = bodyId;
-                    body_md.active = true;
-                    body_md.mig_type = MIGRATION_TYPE_NO;
-                    body_md.mig_stop_at = 0.0;
-
-                    body_md.unused1 = body_md.unused2 = body_md.unused3 = false;
-
-                    // The central star
-                    if (1 == bodyId)
-                    {
-                        body_md.body_type = BODY_TYPE_STAR;
-
-                        param.mass = m0;
-                        param.radius = R0;
-                        param.density = tools::calc_density(param.mass, param.radius);
-                        uint32_t offset = 3 * i;
-                        y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
-                        offset += 3 * n_obj;
-                        y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
-                    }
-                    else
-                    {
-                        body_md.body_type = BODY_TYPE_PROTOPLANET;
-
-                        generate_oe(&oe_d, _oe);
-                        generate_pp(&pp_d, param);
-                        if (0x0 == pp_d.item[PP_NAME_MASS])
-                        {
-                            param.mass = tools::calc_mass(param.radius, param.density);
-                        }
-                        if (0x0 == pp_d.item[PP_NAME_RADIUS])
-                        {
-                            param.radius = tools::calc_radius(param.mass, param.density);
-                        }
-                        if (0x0 == pp_d.item[PP_NAME_DENSITY])
-                        {
-                            param.density = tools::calc_density(param.mass, param.radius);
-                        }
-
-                        var_t mu = K2 * (m0 + param.mass);
-                        tools::calc_phase(mu, &_oe, &rVec, &vVec);
-                        uint32_t offset = 3 * i;
-                        y[offset + 0] = rVec.x; y[offset + 1] = rVec.y; y[offset + 2] = rVec.z;
-                        offset += 3 * n_obj;
-                        y[offset + 0] = vVec.x; y[offset + 1] = vVec.y; y[offset + 2] = vVec.z;
-
-                        var_t P = tools::calc_orbital_period(mu, _oe.sma);
-                        if (min_P > P)
-                        {
-                            min_P = P;
-                        }
-                    }
-
-                    md[bodyIdx] = body_md;
-                    p[bodyIdx]  = param;
-                    oe[bodyIdx] = _oe;
-                } /* for */
-                // Set the initial stepsize for the integrator
-                dt0 = min_P / 50.0;
+                    delete oe_d.item[i];
+                    oe_d.item[i] = NULL;
+                }
+                delete pp_d.item[PP_NAME_DENSITY];
+                delete pp_d.item[PP_NAME_MASS];
             }
+
+            // Create the disk of non-self interacting bodies
+            if (n_nsi)
+            {
+                // If the distribution is NULL than the corresponding orbital element is zero
+                oe_d.item[ORBELEM_NAME_SMA] = new uniform_distribution(rand(), 2.0, 3.0);
+                oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.01);
+                oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.005);
+                oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+                oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+                oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+
+                pp_d.item[PP_NAME_DENSITY] = new uniform_distribution(rand(), 2.0 * constants::GramPerCm3ToSolarPerAu3, 3.0 * constants::GramPerCm3ToSolarPerAu3);
+                pp_d.item[PP_NAME_RADIUS] = new uniform_distribution(rand(), 10.0 * constants::KilometerToAu, 50.0 * constants::KilometerToAu);
+
+                min_P = create_disk(n_obj, n_nsi, BODY_TYPE_PLANETESIMAL, bodyIdx, bodyId, oe_d, pp_d, md, p, oe, y);
+
+                for (int i = 0; i < ORBELEM_NAME_N; i++)
+                {
+                    delete oe_d.item[i];
+                    oe_d.item[i] = NULL;
+                }
+                delete pp_d.item[PP_NAME_DENSITY];
+                delete pp_d.item[PP_NAME_RADIUS];
+            }
+
+            // Create the disk of non-interacting bodies
+            if (n_ni)
+            {
+                // If the distribution is NULL than the corresponding orbital element is zero
+                oe_d.item[ORBELEM_NAME_SMA] = new uniform_distribution(rand(), 3.0, 4.0);
+                oe_d.item[ORBELEM_NAME_ECC] = new uniform_distribution(rand(), 0.0, 0.01);
+                oe_d.item[ORBELEM_NAME_INC] = new uniform_distribution(rand(), 0.0, 0.005);
+                oe_d.item[ORBELEM_NAME_PERI] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+                oe_d.item[ORBELEM_NAME_NODE] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+                oe_d.item[ORBELEM_NAME_MEAN] = new uniform_distribution(rand(), 0.0, 2.0 *PI);
+
+                min_P = create_disk(n_obj, n_ni, BODY_TYPE_TESTPARTICLE, bodyIdx, bodyId, oe_d, pp_d, md, p, oe, y);
+
+                for (int i = 0; i < ORBELEM_NAME_N; i++)
+                {
+                    delete oe_d.item[i];
+                    oe_d.item[i] = NULL;
+                }
+            }
+
+            var_t min = DBL_MAX;
+            for (uint32_t i = 1; i < n_obj; i++)
+            {
+                var_t mu = K2 * (p[0].mass + p[i].mass);
+                var_t P = tools::calc_orbital_period(mu, oe[i].sma);
+                if (min > P)
+                {
+                    min = P;
+                }
+            }
+            dt0 = min / 100.0;
 
             // Transform the coordinates into barycentric
             var3_t* r = (var3_t*)y;
@@ -660,10 +659,10 @@ namespace model
 
             print(dir, filename, n_obj);
 
-            FREE_HOST_VECTOR((void **)&md);
-            FREE_HOST_VECTOR((void **)&p);
-            FREE_HOST_VECTOR((void **)&y);
-            FREE_HOST_VECTOR((void **)&oe);
+            FREE_HOST_ARRAY((void **)&md);
+            FREE_HOST_ARRAY((void **)&p);
+            FREE_HOST_ARRAY((void **)&y);
+            FREE_HOST_ARRAY((void **)&oe);
         }
 
 		void create(string& dir, string& filename)
@@ -671,9 +670,9 @@ namespace model
             uint32_t n_obj = 2;
 			uint32_t n_var = 6 * n_obj;
 			uint32_t n_par = n_obj;
-            ALLOCATE_HOST_VECTOR((void**)&y,  n_var * sizeof(var_t));
-			ALLOCATE_HOST_VECTOR((void**)&p,  n_par * sizeof(nbp_t::param_t));
-			ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+            ALLOCATE_HOST_ARRAY((void**)&y,  n_var * sizeof(var_t));
+			ALLOCATE_HOST_ARRAY((void**)&p,  n_par * sizeof(nbp_t::param_t));
+			ALLOCATE_HOST_ARRAY((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
 			srand((unsigned int)time(NULL));
 			// Set the parameters of the problem
@@ -710,9 +709,9 @@ namespace model
 
             print(dir, filename, n_obj);
 
-            FREE_HOST_VECTOR((void **)&y);
-			FREE_HOST_VECTOR((void **)&p);
-			FREE_HOST_VECTOR((void **)&md);
+            FREE_HOST_ARRAY((void **)&y);
+			FREE_HOST_ARRAY((void **)&p);
+			FREE_HOST_ARRAY((void **)&md);
         }
 
         void create_grav_focusing(string& dir, string& filename)
@@ -720,9 +719,9 @@ namespace model
             uint32_t n_obj = 2;
             uint32_t n_var = 6 * n_obj;
             uint32_t n_par = n_obj;
-            ALLOCATE_HOST_VECTOR((void**)&y, n_var * sizeof(var_t));
-            ALLOCATE_HOST_VECTOR((void**)&p, n_par * sizeof(nbp_t::param_t));
-            ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+            ALLOCATE_HOST_ARRAY((void**)&y, n_var * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&p, n_par * sizeof(nbp_t::param_t));
+            ALLOCATE_HOST_ARRAY((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
 
             srand((unsigned int)time(NULL));
             // Set the parameters of the problem
@@ -756,9 +755,9 @@ namespace model
 
             print(dir, filename, n_obj);
 
-            FREE_HOST_VECTOR((void **)&y);
-            FREE_HOST_VECTOR((void **)&p);
-            FREE_HOST_VECTOR((void **)&md);
+            FREE_HOST_ARRAY((void **)&y);
+            FREE_HOST_ARRAY((void **)&p);
+            FREE_HOST_ARRAY((void **)&md);
         }
 
         void create_solar_system(string &dir, string& filename)
@@ -766,10 +765,10 @@ namespace model
             const uint32_t n_obj = 5;
             uint32_t n_var = 6 * n_obj;
             uint32_t n_par = n_obj;
-            ALLOCATE_HOST_VECTOR((void**)&y, n_var * sizeof(var_t));
-            ALLOCATE_HOST_VECTOR((void**)&p, n_par * sizeof(nbp_t::param_t));
-            ALLOCATE_HOST_VECTOR((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
-            ALLOCATE_HOST_VECTOR((void**)&oe, n_obj * sizeof(orbelem_t));
+            ALLOCATE_HOST_ARRAY((void**)&y, n_var * sizeof(var_t));
+            ALLOCATE_HOST_ARRAY((void**)&p, n_par * sizeof(nbp_t::param_t));
+            ALLOCATE_HOST_ARRAY((void**)&md, n_obj * sizeof(nbp_t::metadata_t));
+            ALLOCATE_HOST_ARRAY((void**)&oe, n_obj * sizeof(orbelem_t));
 
             // The id of each body must be larger than 0 in order to indicate inactive body with negative id (ie. zero is not good)
             uint32_t bodyId = 1;
@@ -932,17 +931,17 @@ namespace model
 
             print(dir, filename, n_obj);
 
-            FREE_HOST_VECTOR((void **)&y);
-            FREE_HOST_VECTOR((void **)&p);
-            FREE_HOST_VECTOR((void **)&md);
-            FREE_HOST_VECTOR((void **)&oe);
+            FREE_HOST_ARRAY((void **)&y);
+            FREE_HOST_ARRAY((void **)&p);
+            FREE_HOST_ARRAY((void **)&md);
+            FREE_HOST_ARRAY((void **)&oe);
         }
 
 	} /* namespace nbody */
 } /* namespace model */
 
 
-int parse_options(int argc, const char **argv, string &odir, string &filename, uint32_t& n_obj)
+int parse_options(int argc, const char **argv, string &odir, string &filename, uint32_t& n_si, uint32_t& n_nsi, uint32_t& n_ni)
 {
 	int i = 1;
 
@@ -960,12 +959,22 @@ int parse_options(int argc, const char **argv, string &odir, string &filename, u
 			i++;
 			filename = argv[i];
 		}
-		else if (p == "-n_obj")
-		{
-			i++;
-			n_obj = atoi(argv[i]);
-		}
-		else
+        else if (p == "-n_si")
+        {
+            i++;
+            n_si = atoi(argv[i]);
+        }
+        else if (p == "-n_nsi")
+        {
+            i++;
+            n_nsi = atoi(argv[i]);
+        }
+        else if (p == "-n_ni")
+        {
+            i++;
+            n_ni = atoi(argv[i]);
+        }
+        else
 		{
 			throw string("Invalid switch (" + p + ") on command-line.");
 		}
@@ -979,7 +988,7 @@ int main(int argc, const char **argv)
 {
 	string odir;
 	string filename;
-	uint32_t n_obj;
+	uint32_t n_si, n_nsi, n_ni;
 
 #if 0
     /*
@@ -994,7 +1003,7 @@ int main(int argc, const char **argv)
 
         uint32_t n_data = 10000;
         var_t* data = NULL;
-        ALLOCATE_HOST_VECTOR((void**)&data, n_data * sizeof(var_t));
+        ALLOCATE_HOST_ARRAY((void**)&data, n_data * sizeof(var_t));
 
         //{
         //    path = file::combine_path(dir, "uniform.txt");
@@ -1061,7 +1070,7 @@ int main(int argc, const char **argv)
             print_data(path, n_data, data);
         }
 
-        FREE_HOST_VECTOR((void **)&data);
+        FREE_HOST_ARRAY((void **)&data);
 
         return (EXIT_SUCCESS);
     }
@@ -1072,14 +1081,14 @@ int main(int argc, const char **argv)
     }
 #endif
 
-	n_obj = 0;
+	n_si = n_nsi = n_ni = 0;
 	try
 	{
         if (2 > argc)
         {
             throw string("Missing command line arguments.");
         }
-		parse_options(argc, argv, odir, filename, n_obj);
+		parse_options(argc, argv, odir, filename, n_si, n_nsi, n_ni);
 
 		fn_info = filename + ".info.txt";
 		fn_data = filename + ".data.txt";
@@ -1090,8 +1099,8 @@ int main(int argc, const char **argv)
 		//model::nbody::create(odir, filename, n_obj);
 		//model::nbody::create(odir, filename);               // The two-body problem
         //model::nbody::create_grav_focusing(odir, filename);
-        //model::nbody::ceate_disk(odir, filename, n_obj);
-        model::nbody::create_solar_system(odir, filename);
+        model::nbody::ceate_disk(odir, filename, n_si, n_nsi, n_ni);
+        //model::nbody::create_solar_system(odir, filename);
 	}
 	catch (const string& msg)
 	{

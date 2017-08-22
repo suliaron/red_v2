@@ -82,7 +82,7 @@ namespace redutil2
 
 		void calc_position_after_collision(var_t m1, var_t m2, const var3_t* r1, const var3_t* r2, var3_t& r);
 		void calc_velocity_after_collision(var_t m1, var_t m2, const var3_t* v1, const var3_t* v2, var3_t& v);
-		void calc_physical_properties(const pp_disk_t::param_t &p1, const pp_disk_t::param_t &p2, pp_disk_t::param_t &p);
+		void calc_physical_properties(const nbp_t::param_t &p1, const nbp_t::param_t &p2, nbp_t::param_t &p);
 
 		var_t norm(const var4_t* r);
 		var_t norm(const var3_t* r);
@@ -105,7 +105,7 @@ namespace redutil2
        
 		void kepler_equation_solver(var_t ecc, var_t mean, var_t eps, var_t* E);
 		void calc_phase(var_t mu, const orbelem_t* oe, var3_t* rVec, var3_t* vVec);
-		void calc_oe(   var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe);
+		int calc_oe(   var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe);
 		var_t calc_orbital_period(var_t mu, var_t a);
 
 		//! Calculate the linear combination of vectors, a[i] = sum (coeff[j] * c[j][i])
@@ -214,6 +214,7 @@ namespace redutil2
 			var3_t calc_position_of_bc(uint32_t n, const nbp_t::param_t* p, const var3_t* r);
 			var3_t calc_velocity_of_bc(uint32_t n, const nbp_t::param_t* p, const var3_t* v);
             void transform_to_bc(uint32_t n, const nbp_t::param_t* p, var3_t* r, var3_t* v);
+            uint32_t remove_duplicate(nbp_t::event_data_t* ed, uint32_t n_event);
 		} /* namespace nbp */
 
 	} /* namespace tools */

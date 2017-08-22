@@ -137,6 +137,89 @@ void generate_pp(pp_dist_t *pp_d, pp_disk_t::param_t& param)
     }
 }
 
+void create_star(uint32_t n_total, uint32_t& bodyIdx, uint32_t& bodyId, var_t m, var_t R, nbp_t::metadata_t* md, nbp_t::param_t* p, var_t* y)
+{
+    md[bodyIdx].id = bodyId;
+    md[bodyIdx].active = true;
+    md[bodyIdx].mig_type = MIGRATION_TYPE_NO;
+    md[bodyIdx].mig_stop_at = 0.0;
+    md[bodyIdx].unused1 = md[bodyIdx].unused2 = md[bodyIdx].unused3 = false;
+    md[bodyIdx].body_type = BODY_TYPE_STAR;
+
+    p[bodyIdx].mass = m;
+    p[bodyIdx].radius = R;
+    p[bodyIdx].density = tools::calc_density(m, R);
+
+    uint32_t offset = 3 * bodyIdx;
+    y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
+    offset += 3 * n_total;
+    y[offset + 0] = y[offset + 1] = y[offset + 2] = 0.0;
+
+    bodyIdx++, bodyId++;
+}
+
+double create_disk(uint32_t n_total, uint32_t n_disk, body_type_t bt, uint32_t& bodyIdx, uint32_t& bodyId, oe_dist_t& oe_d, pp_dist_t& pp_d, nbp_t::metadata_t* md, nbp_t::param_t* p, orbelem_t* oe , var_t* y)
+{
+    nbp_t::param_t param = { 0.0, 0.0, 0.0 };
+    nbp_t::metadata_t body_md = { 0, 0, 0, true, false, 0.0 };
+    orbelem_t _oe = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    var3_t rVec = { 0.0, 0.0, 0.0 };
+    var3_t vVec = { 0.0, 0.0, 0.0 };
+
+    var_t min_P = DBL_MAX;
+    uint32_t _bodyIdx = bodyIdx;
+    for ( ; bodyIdx < _bodyIdx + n_disk; bodyIdx++, bodyId++)
+    {
+        body_md.id = bodyId;
+        body_md.active = true;
+        body_md.mig_type = MIGRATION_TYPE_NO;
+        body_md.mig_stop_at = 0.0;
+        body_md.unused1 = body_md.unused2 = body_md.unused3 = false;
+        body_md.body_type = bt;
+
+        generate_oe(&oe_d, _oe);
+        if (BODY_TYPE_TESTPARTICLE != bt)
+        {
+            generate_pp(&pp_d, param);
+            if (0x0 == pp_d.item[PP_NAME_MASS])
+            {
+                param.mass = tools::calc_mass(param.radius, param.density);
+            }
+            if (0x0 == pp_d.item[PP_NAME_RADIUS])
+            {
+                param.radius = tools::calc_radius(param.mass, param.density);
+            }
+            if (0x0 == pp_d.item[PP_NAME_DENSITY])
+            {
+                param.density = tools::calc_density(param.mass, param.radius);
+            }
+        }
+        else
+        {
+            param.density = param.mass = param.radius = 0.0;
+        }
+
+        var_t mu = K2 * (p[0].mass + param.mass);
+        tools::calc_phase(mu, &_oe, &rVec, &vVec);
+        uint32_t offset = 3 * bodyIdx;
+        y[offset + 0] = rVec.x; y[offset + 1] = rVec.y; y[offset + 2] = rVec.z;
+        offset += 3 * n_total;
+        y[offset + 0] = vVec.x; y[offset + 1] = vVec.y; y[offset + 2] = vVec.z;
+
+        var_t P = tools::calc_orbital_period(mu, _oe.sma);
+        if (min_P > P)
+        {
+            min_P = P;
+        }
+
+        md[bodyIdx] = body_md;
+        p[bodyIdx] = param;
+        oe[bodyIdx] = _oe;
+    } /* for */
+
+    return min_P;
+}
+
 template <typename T>
 void print_number(string& path, T number)
 {

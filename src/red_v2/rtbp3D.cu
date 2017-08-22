@@ -11,80 +11,25 @@ using namespace std;
 using namespace redutil2;
 
 
-rtbp3D::rtbp3D(uint16_t n_ppo, comp_dev_t comp_dev) :
-	ode(3, 1, 9, n_ppo, comp_dev)
+rtbp3D::rtbp3D(uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev) :
+	ode(3, 1, 9, n_ppo, omd_size, comp_dev)
 {
 	name = "Regularized 3D two-body problem";
 
 	initialize();
-	allocate_storage();
 }
 
 rtbp3D::~rtbp3D()
-{
-	deallocate_storage();
-}
+{ }
 
 void rtbp3D::initialize()
 {
-	h_md    = NULL;
+    h_md = (tbp_t::metadata_t*)h_omd;
+    d_md = (tbp_t::metadata_t*)d_omd;
+      md = (tbp_t::metadata_t*)omd;
 
 	h       = 0.0;            // energy
 	h_y[8]  = 0.0;            // s_0: fictitious time (4 position, 4 velocity, 1 time)
-}
-
-void rtbp3D::allocate_storage()
-{
-	allocate_host_storage();
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		allocate_device_storage();
-	}
-}
-
-void rtbp3D::allocate_host_storage()
-{
-	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void rtbp3D::allocate_device_storage()
-{
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void rtbp3D::deallocate_storage()
-{
-	//NOTE : First always release the DEVICE memory
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		deallocate_device_storage();
-	}
-	deallocate_host_storage();
-}
-
-void rtbp3D::deallocate_host_storage()
-{
-	FREE_HOST_VECTOR((void **)&(h_md));
-}
-
-void rtbp3D::deallocate_device_storage()
-{
-	FREE_DEVICE_VECTOR((void **)&(h_md));
-}
-
-void rtbp3D::copy_metadata(copy_direction_t dir)
-{
-	switch (dir)
-	{
-	case COPY_DIRECTION_TO_DEVICE:
-		copy_vector_to_device(d_md, h_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	case COPY_DIRECTION_TO_HOST:
-		copy_vector_to_host(h_md, d_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	default:
-		throw std::string("Parameter 'dir' is out of range.");
-	}
 }
 
 void rtbp3D::trans_to_descartes_var(var_t& x, var_t& y, var_t& z, var_t& vx, var_t& vy, var_t& vz)
@@ -145,7 +90,7 @@ void rtbp3D::calc_integral()
 {
 	static bool first_call = true;
 
-	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	var_t r  = SQR(h_y[0]) + SQR(h_y[1]) + SQR(h_y[2]) + SQR(h_y[3]);
 	var_t vx = (2.0/r) * (h_y[0] * h_y[4] - h_y[1] * h_y[5] - h_y[2] * h_y[6] + h_y[3] * h_y[7]);		// vx = 2/r * (u1*vu1 - u2*vu2 - u3*vu3 + u4*vu4)
@@ -220,7 +165,7 @@ void rtbp3D::load(string& path)
 
 void rtbp3D::load_ascii(ifstream& input)
 {
-	tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	var_t _t;
 	for (uint32_t i = 0; i < n_obj; i++)
@@ -319,7 +264,7 @@ void rtbp3D::print_solution_ascii(ofstream& sout) //TODO: implement correctly
 		for (uint16_t j = 0; j < n_ppo; j++)
 		{
 			uint32_t param_idx = i * n_ppo + j;
-			sout << setw(VAR_T_W) << h_p[param_idx] << SEP;
+			sout << setw(VAR_T_W) << h_par[param_idx] << SEP;
 		}
 		// Print the regularized variables for each object
 		for (uint16_t j = 0; j < n_vpo; j++)

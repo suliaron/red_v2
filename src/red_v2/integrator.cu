@@ -67,34 +67,34 @@ void integrator::allocate_storage(uint32_t n_var)
 
 void integrator::allocate_host_storage(uint32_t n_var)
 {
-	ALLOCATE_HOST_VECTOR((void**)&h_k,    n_stage*sizeof(var_t*));
-	ALLOCATE_HOST_VECTOR((void**)&cpy_dk, n_stage*sizeof(var_t*));
+	ALLOCATE_HOST_ARRAY((void**)&h_k,    n_stage*sizeof(var_t*));
+	ALLOCATE_HOST_ARRAY((void**)&cpy_dk, n_stage*sizeof(var_t*));
 
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		ALLOCATE_HOST_VECTOR((void**)(h_k + i), n_var*sizeof(var_t));
+		ALLOCATE_HOST_ARRAY((void**)(h_k + i), n_var*sizeof(var_t));
 	}
 
-	ALLOCATE_HOST_VECTOR((void**)&(h_ytemp), n_var*sizeof(var_t));
+	ALLOCATE_HOST_ARRAY((void**)&(h_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
 	{
-		ALLOCATE_HOST_VECTOR((void**)&(h_err), n_var*sizeof(var_t));
+		ALLOCATE_HOST_ARRAY((void**)&(h_err), n_var*sizeof(var_t));
 	}
 }
 
 void integrator::allocate_device_storage(uint32_t n_var)
 {
-	ALLOCATE_DEVICE_VECTOR((void**)(&d_k), n_stage*sizeof(var_t*));
+	ALLOCATE_DEVICE_ARRAY((void**)(&d_k), n_stage*sizeof(var_t*));
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		ALLOCATE_DEVICE_VECTOR((void**)(cpy_dk + i), n_var*sizeof(var_t));
+		ALLOCATE_DEVICE_ARRAY((void**)(cpy_dk + i), n_var*sizeof(var_t));
 	}
 	CUDA_SAFE_CALL(cudaMemcpy(d_k, cpy_dk, n_stage * sizeof(var_t*), cudaMemcpyHostToDevice));
 
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_ytemp), n_var*sizeof(var_t));
+	ALLOCATE_DEVICE_ARRAY((void**)&(d_ytemp), n_var*sizeof(var_t));
 	if (adaptive)
 	{
-		ALLOCATE_DEVICE_VECTOR((void**)&(d_err), n_var*sizeof(var_t));
+		ALLOCATE_DEVICE_ARRAY((void**)&(d_err), n_var*sizeof(var_t));
 	}
 }
 
@@ -112,16 +112,16 @@ void integrator::deallocate_host_storage()
 {
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		FREE_HOST_VECTOR((void **)(h_k + i));
+		FREE_HOST_ARRAY((void **)(h_k + i));
 	}
 	//free(k);           k = NULL;
 	free(h_k);       h_k = NULL;
 	free(cpy_dk); cpy_dk = NULL;
 
-	FREE_HOST_VECTOR((void **)&(h_ytemp));
+	FREE_HOST_ARRAY((void **)&(h_ytemp));
 	if (adaptive)
 	{
-		FREE_HOST_VECTOR((void **)&(h_err));
+		FREE_HOST_ARRAY((void **)&(h_err));
 	}
 }
 
@@ -129,14 +129,14 @@ void integrator::deallocate_device_storage()
 {
 	for (uint16_t i = 0; i < n_stage; i++)
 	{
-		FREE_DEVICE_VECTOR((void **)&(cpy_dk[i]));
+		FREE_DEVICE_ARRAY((void **)&(cpy_dk[i]));
 	}
-	FREE_DEVICE_VECTOR((void **)&(d_k));
+	FREE_DEVICE_ARRAY((void **)&(d_k));
 
-	FREE_DEVICE_VECTOR((void **)&(d_ytemp));
+	FREE_DEVICE_ARRAY((void **)&(d_ytemp));
 	if (adaptive)
 	{
-		FREE_DEVICE_VECTOR((void **)&(d_err));
+		FREE_DEVICE_ARRAY((void **)&(d_err));
 	}
 }
 

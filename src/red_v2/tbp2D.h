@@ -12,17 +12,12 @@ public:
         \param path_si   the path of the file which conatins data about the initial conditions
         \param path_sd   the path of the file which conatins the initial conditions
 		\param n_ppo     the number of parameters per object
-		\param PROC_UNIT  the name of the executing device
+        \param omd_size  the size of the metadata in bytes
+        \param PROC_UNIT the name of the executing device
 	*/
-	tbp2D(std::string& path_si, std::string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev);
+	tbp2D(std::string& path_si, std::string& path_sd, uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev);
 	//! Destructor
 	~tbp2D();
-
-	//! Copies N-body metadata between HOST and DEVICE memory
-	/*!
-		\param dir The direction of the copy
-	*/
-	void copy_metadata(copy_direction_t dir);
 
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
@@ -45,15 +40,8 @@ public:
 
 private:
 	void initialize();
-	void allocate_storage();
-	void allocate_host_storage();
-	void allocate_device_storage();
-	
-	void deallocate_storage();
-	void deallocate_host_storage();
-	void deallocate_device_storage();
 
-	//! Load data about the initial conditions
+    //! Load data about the initial conditions
 	/*!
 		\param path   full file path of the file
 	*/

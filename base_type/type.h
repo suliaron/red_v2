@@ -107,7 +107,15 @@ typedef enum
 	THRESHOLD_N
 } threshold_t;
 
-typedef enum 
+typedef enum event_name
+{
+    EVENT_NAME_HIT_CENTRUM,
+    EVENT_NAME_EJECTION,
+    EVENT_NAME_COLLISION,
+    EVENT_NAME_N
+} event_name_t;
+
+typedef enum
 { 
 	INTEGRATOR_EULER,
 	INTEGRATOR_RUNGEKUTTA2,
@@ -118,15 +126,6 @@ typedef enum
     INTEGRATOR_HERMITE4B,
 	INTEGRATOR_N
 } integrator_type_t;
-
-typedef enum 
-{
-	EVENT_NAME_NONE,
-	EVENT_NAME_HIT_CENTRUM,
-	EVENT_NAME_EJECTION,
-	EVENT_NAME_COLLISION,
-	EVENT_NAME_N
-} event_name_t;
 
 typedef enum 
 {
@@ -298,15 +297,15 @@ namespace nbp_t
 {
     typedef struct 
     {
-        int32_t id;             // [ 4 byte]
-        usi_t   body_type;      // [ 2 byte]
-        usi_t   mig_type;       // [ 2 byte]
-        bool	active;         // [ 1 byte]
-        bool	unused1;        // [ 1 byte]
-        bool	unused2;        // [ 1 byte]
-        bool	unused3;        // [ 1 byte]
-        float   mig_stop_at;    // [ 4 byte]
-    } metadata_t;               // [16 byte]
+        uint32_t id;             // [ 4 byte]
+        usi_t    body_type;      // [ 2 byte]
+        usi_t    mig_type;       // [ 2 byte]
+        bool	 active;         // [ 1 byte]
+        bool	 unused1;        // [ 1 byte]
+        bool	 unused2;        // [ 1 byte]
+        bool	 unused3;        // [ 1 byte]
+        float    mig_stop_at;    // [ 4 byte]
+    } metadata_t;                // [16 byte]
 
     typedef struct 
     {
@@ -314,6 +313,37 @@ namespace nbp_t
         var_t mass;             // [ 8 byte]
         var_t radius;           // [ 8 byte]
     } param_t;                  // [24 byte]
+
+    typedef struct
+    {
+        uint32_t id;                    //!< Id of the event
+        event_name_t event_name;        //!< Name of the event
+
+        var_t	 t;                     //!< Time of the event
+        var_t	 d;                     //!< distance of the bodies
+
+        int32_t  id0;                   //!< Id of the star
+        uint32_t idx0;                  //!< Index of the star
+        param_t  p0;                    //!< Parameters of the star
+        var3_t	 r0;                    //!< Position of star
+        var3_t	 v0;                    //!< Velocity of star
+
+        int32_t  id1;                   //!< Id of the survivor
+        uint32_t idx1;                  //!< Index of the survivor
+        param_t  p1;                    //!< Parameters of the survivor before the event
+        var3_t	 r1;                    //!< Position of survisor
+        var3_t	 v1;                    //!< Velocity of survisor
+
+        int32_t	 id2;                   //!< Id of the merger
+        uint32_t idx2;                  //!< Index of the merger
+        param_t  p2;                    //!< Parameters of the merger before the event
+        var3_t	 r2;                    //!< Position of merger
+        var3_t	 v2;                    //!< Velocity of merger
+
+        param_t  ps;                    //!< Parameters of the survivor after the event
+        var3_t	 rs;                    //!< Position of survivor after the event
+        var3_t	 vs;                    //!< Velocity of survivor after the event
+    } event_data_t;
 } /* nbp_t */
 
 namespace pp_disk_t
@@ -403,7 +433,7 @@ namespace pp_disk_t
 
 		event_data()
 		{
-			event_name = EVENT_NAME_NONE;
+			event_name = EVENT_NAME_N;
 			t = 0.0;
 			d = 0.0;
 

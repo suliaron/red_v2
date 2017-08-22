@@ -33,9 +33,9 @@ int main()
         uint32_t n_obj = 11;
         uint32_t n_var = 6 * n_obj;
         uint32_t n_par = 3 * n_obj;
-        ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(nbp_t::metadata_t));
-        ALLOCATE_HOST_VECTOR((void**)&(h_y), n_var * sizeof(var_t));
-        ALLOCATE_HOST_VECTOR((void**)&(h_p), n_par * sizeof(var_t));
+        ALLOCATE_HOST_ARRAY((void**)&(h_md), n_obj * sizeof(nbp_t::metadata_t));
+        ALLOCATE_HOST_ARRAY((void**)&(h_y), n_var * sizeof(var_t));
+        ALLOCATE_HOST_ARRAY((void**)&(h_p), n_par * sizeof(var_t));
 
         ifstream input;
 
@@ -98,9 +98,9 @@ int main()
         }
 
 
-        FREE_HOST_VECTOR((void **)&(h_y));
-        FREE_HOST_VECTOR((void **)&(h_p));
-        FREE_HOST_VECTOR((void **)&(h_md));
+        FREE_HOST_ARRAY((void **)&(h_y));
+        FREE_HOST_ARRAY((void **)&(h_p));
+        FREE_HOST_ARRAY((void **)&(h_md));
 
         cout << " done" << endl;
     }

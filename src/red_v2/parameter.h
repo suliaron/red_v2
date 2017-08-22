@@ -10,8 +10,6 @@ public:
 	parameter(std::string& dir, std::string& filename, bool verbose);
 	~parameter();
 
-	std::string get_data()  { return data; }
-
 	std::string filename;              //!< holds the path of the file containing the parameters of the simulation
 	std::string simulation_name;       //! name of the simulation
 	std::string simulation_desc;       //! description of the simulation
@@ -32,7 +30,11 @@ public:
 
 	var_t threshold[THRESHOLD_N];	   //! Contains the threshold values: hit_centrum_dst, ejection_dst, radii enhance factor (A_ref)
 
-	// Input/Output streams
+    std::string get_data() { return data; }
+    bool get_chk_evnt();
+
+    
+    // Input/Output streams
 	friend std::ostream& operator<<(std::ostream& stream, const parameter* param);
 
 private:

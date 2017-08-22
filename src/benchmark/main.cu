@@ -79,9 +79,9 @@ void benchmark(option& opt, ofstream& o_result)
             memset(h_dy, 0, i * NVPO * sizeof(var_t));
             cudaMemset(d_dy, 0, i * NVPO * sizeof(var_t));
 
-            redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
-            redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
-            redutil2::copy_vector_to_device(d_md, h_md, i * sizeof(nbp_t::metadata_t));
+            redutil2::copy_array_to_device(d_y, h_y, n_var * sizeof(var_t));
+            redutil2::copy_array_to_device(d_p, h_p, n_par * sizeof(var_t));
+            redutil2::copy_array_to_device(d_md, h_md, i * sizeof(nbp_t::metadata_t));
 
             benchmark_GPU(opt.id_dev, i, d_md, d_y, d_p, d_dy, o_result);
 
@@ -118,7 +118,7 @@ void compare(option& opt)
         printf("Compare gravity accelerations computed by CPU (n_obj = %6d):\n\n", n_obj);
 
         allocate_host_storage(n_obj, &h_y, &h_dy1, &h_p, &h_md);
-        ALLOCATE_HOST_VECTOR((void**)(&h_dy2), n_var * sizeof(var_t));
+        ALLOCATE_HOST_ARRAY((void**)(&h_dy2), n_var * sizeof(var_t));
         populate(seed, n_obj, h_y, h_p, h_md);
 
         // Create aliases
@@ -212,7 +212,7 @@ void compare(option& opt)
         }
 
         deallocate_host_storage(&h_y, &h_dy1, &h_p, &h_md);
-        FREE_HOST_VECTOR((void **)(h_dy2));
+        FREE_HOST_ARRAY((void **)(h_dy2));
     }
     else
     {
@@ -228,14 +228,14 @@ void compare(option& opt)
         nbp_t::metadata_t* d_md = 0x0;
 
         allocate_host_storage(n_obj, &h_y, &h_dy1, &h_p, &h_md);
-        ALLOCATE_HOST_VECTOR((void**)(&h_dy2), n_var * sizeof(var_t));
+        ALLOCATE_HOST_ARRAY((void**)(&h_dy2), n_var * sizeof(var_t));
         //populate(seed, n_obj, h_y, h_p, h_md);
         populate(n_obj, h_y, h_p, h_md);
         allocate_device_storage(n_obj, &d_y, &d_dy, &d_p, &d_md);
 
-        redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
-        redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
-        redutil2::copy_vector_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
+        redutil2::copy_array_to_device(d_y, h_y, n_var * sizeof(var_t));
+        redutil2::copy_array_to_device(d_p, h_p, n_par * sizeof(var_t));
+        redutil2::copy_array_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
 
         {
             // Create aliases
@@ -264,7 +264,7 @@ void compare(option& opt)
             //uint2_t src = { 0, n_obj };
             //float elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, d_md, r, p, a);
 
-            redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
+            redutil2::copy_array_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
             printf("The GPU computation took: %10.6f [ms]\n", elapsed_time);
         }
         const var3_t* a1 = (var3_t*)(h_dy1 + nv);
@@ -277,7 +277,7 @@ void compare(option& opt)
         }
 
         deallocate_host_storage(&h_y, &h_dy1, &h_p, &h_md);
-        FREE_HOST_VECTOR((void **)(h_dy2));
+        FREE_HOST_ARRAY((void **)(h_dy2));
         deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
     }
 
@@ -308,13 +308,13 @@ void compare_part(option& opt, uint2_t snk, uint2_t src)
     nbp_t::metadata_t* d_md = 0x0;
 
     allocate_host_storage(n_obj, &h_y, &h_dy1, &h_p, &h_md);
-    ALLOCATE_HOST_VECTOR((void**)(&h_dy2), n_var * sizeof(var_t));
+    ALLOCATE_HOST_ARRAY((void**)(&h_dy2), n_var * sizeof(var_t));
     populate(n_obj, h_y, h_p, h_md);
     allocate_device_storage(n_obj, &d_y, &d_dy, &d_p, &d_md);
 
-    redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
-    redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
-    redutil2::copy_vector_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
+    redutil2::copy_array_to_device(d_y, h_y, n_var * sizeof(var_t));
+    redutil2::copy_array_to_device(d_p, h_p, n_par * sizeof(var_t));
+    redutil2::copy_array_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
 
     {
         // Create aliases
@@ -357,7 +357,7 @@ void compare_part(option& opt, uint2_t snk, uint2_t src)
         //uint2_t src = { 0, n_obj };
         //float elapsed_time = gpu_calc_grav_accel_tile(snk, src, 256, start, stop, r, p, a);
 
-        redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
+        redutil2::copy_array_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
         printf("The GPU computation took: %10.6f [ms]\n", elapsed_time);
     }
     const var3_t* a1 = (var3_t*)(h_dy1 + nv);
@@ -370,7 +370,7 @@ void compare_part(option& opt, uint2_t snk, uint2_t src)
     }
 
     deallocate_host_storage(&h_y, &h_dy1, &h_p, &h_md);
-    FREE_HOST_VECTOR((void **)(h_dy2));
+    FREE_HOST_ARRAY((void **)(h_dy2));
     deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
 
     cout << "Done" << endl;
@@ -405,13 +405,13 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
     // Used by the subsequent rand() function calls
 
     allocate_host_storage(n_obj, &h_y, &h_dy1, &h_p, &h_md);
-    ALLOCATE_HOST_VECTOR((void**)(&h_dy2), n_var * sizeof(var_t));
+    ALLOCATE_HOST_ARRAY((void**)(&h_dy2), n_var * sizeof(var_t));
     populate(seed, n_si, n_nsi, n_ni, h_y, h_p, h_md);
     allocate_device_storage(n_obj, &d_y, &d_dy, &d_p, &d_md);
 
-    redutil2::copy_vector_to_device(d_y, h_y, n_var * sizeof(var_t));
-    redutil2::copy_vector_to_device(d_p, h_p, n_par * sizeof(var_t));
-    redutil2::copy_vector_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
+    redutil2::copy_array_to_device(d_y, h_y, n_var * sizeof(var_t));
+    redutil2::copy_array_to_device(d_p, h_p, n_par * sizeof(var_t));
+    redutil2::copy_array_to_device(d_md, h_md, n_obj * sizeof(nbp_t::metadata_t));
 
     uint2_t snk, src;
     // Compute the acceleration on the CPU with the naive method
@@ -492,7 +492,7 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
             elapsed_time += gpu_calc_grav_accel_tile(snk, src, 256, start, stop, d_md, r, p, a);
         }
 
-        redutil2::copy_vector_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
+        redutil2::copy_array_to_host(h_dy2, d_dy, n_var * sizeof(var_t));
         printf("The GPU computation took: %10.6f [ms]\n", elapsed_time);
     }
     const var3_t* a1 = (var3_t*)(h_dy1 + nv);
@@ -505,7 +505,7 @@ void compare_test_case(option& opt, uint32_t n_si, uint32_t n_nsi, uint32_t n_ni
     }
 
     deallocate_host_storage(&h_y, &h_dy1, &h_p, &h_md);
-    FREE_HOST_VECTOR((void **)(h_dy2));
+    FREE_HOST_ARRAY((void **)(h_dy2));
     deallocate_device_storage(&d_y, &d_dy, &d_p, &d_md);
 
     cout << "Done" << endl;

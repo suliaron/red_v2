@@ -41,14 +41,38 @@ void print_ptr(const var_t* a)
 __global__
 void print_ptr(const var_t* const *a)
 {
-	uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+    uint32_t tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (0 == tid)
-	{
-		printf("%p\t%p\n", a, *a);
-	}
+    if (0 == tid)
+    {
+        printf("%p\t%p\n", a, *a);
+    }
 }
-	
+
+__global__
+void prn(const var_t* a)
+{
+    printf("%25.16le\n", *a);
+}
+
+__global__
+void prn(const var3_t* a)
+{
+    printf("%25.16le, %25.16le, %25.16le\n", a->x, a->y, a->z);
+}
+
+__global__
+void prn(const nbp_t::param_t* a)
+{
+    printf("%25.16le, %25.16le, %25.16le\n", a->density, a->mass, a->radius);
+}
+
+__global__
+void prn(const nbp_t::metadata_t* a)
+{
+    printf("%2d %2d %6lu %16.6le %2d %2d %2d %2d\n", a->active, a->body_type, a->id, a->mig_stop_at, a->mig_type, a->unused1, a->unused2, a->unused3);
+}
+
 //! Calculate the special linear combination of two vectors, a[i] = b[i] + f*c[i]
 __global__
 void calc_lin_comb_s(var_t* a, const var_t* b, var_t f, const var_t* c, uint32_t n)
@@ -395,7 +419,26 @@ void device_query(ostream& sout, int id_dev, bool print_to_screen)
 	}
 }
 
-void allocate_host_vector(void **ptr, size_t size, const char *file, int line)
+void set_device(int id_of_target_dev, ostream& sout)
+{
+    int n_device = get_n_cuda_device();
+    if (0 == n_device)
+    {
+        throw string("There are no available device(s) that support CUDA.");
+    }
+
+    if (n_device > id_of_target_dev && 0 <= id_of_target_dev)
+    {
+        // Set the desired id of the device
+        CUDA_SAFE_CALL(cudaSetDevice(id_of_target_dev));
+    }
+    else
+    {
+        throw string("The device with the requested id does not exist.");
+    }
+}
+
+void allocate_host_array(void **ptr, size_t size, const char *file, int line)
 {
 	*ptr = (void *)malloc(size);
 	if (NULL == ptr)
@@ -407,7 +450,7 @@ void allocate_host_vector(void **ptr, size_t size, const char *file, int line)
 	memset(*ptr, 0, size);
 }
 
-void allocate_device_vector(void **ptr, size_t size, const char *file, int line)
+void allocate_device_array(void **ptr, size_t size, const char *file, int line)
 {
 	// Allocate memory
 	CUDA_SAFE_CALL(cudaMalloc(ptr, size));
@@ -415,19 +458,7 @@ void allocate_device_vector(void **ptr, size_t size, const char *file, int line)
 	CUDA_SAFE_CALL(cudaMemset(*ptr, 0, size));
 }
 
-void allocate_vector(void **ptr, size_t size, bool cpu, const char *file, int line)
-{
-	if (cpu)
-	{
-		allocate_host_vector(ptr, size, file, line);
-	}
-	else
-	{
-		allocate_device_vector(ptr, size, file, line);
-	}
-}
-
-void free_host_vector(void **ptr, const char *file, int line)
+void free_host_array(void **ptr, const char *file, int line)
 {
 	if (NULL != *ptr)
 	{
@@ -436,7 +467,7 @@ void free_host_vector(void **ptr, const char *file, int line)
 	}
 }
 
-void free_device_vector(void **ptr, const char *file, int line)
+void free_device_array(void **ptr, const char *file, int line)
 {
 	if (NULL != *ptr)
 	{
@@ -445,92 +476,17 @@ void free_device_vector(void **ptr, const char *file, int line)
 	}
 }
 
-//void free_vector(void **ptr, bool cpu, const char *file, int line)
-//{
-//	if (cpu)
-//	{
-//		free_host_vector(ptr, file, line);
-//	}
-//	else
-//	{
-//		free_device_vector(ptr, file, line);
-//	}
-//}
-
-void allocate_host_storage(pp_disk_t::sim_data_t *sd, int n)
-{
-	sd->h_y.resize(2);
-	sd->h_yout.resize(2);
-
-	for (int i = 0; i < 2; i++)
-	{
-		ALLOCATE_HOST_VECTOR((void **)&(sd->h_y[i]),    n*sizeof(var4_t));
-		ALLOCATE_HOST_VECTOR((void **)&(sd->h_yout[i]), n*sizeof(var4_t));
-	}
-	ALLOCATE_HOST_VECTOR((void **)&(sd->h_p),           n*sizeof(pp_disk_t::param_t));
-	ALLOCATE_HOST_VECTOR((void **)&(sd->h_body_md),     n*sizeof(pp_disk_t::body_metadata_t));
-	ALLOCATE_HOST_VECTOR((void **)&(sd->h_epoch),       n*sizeof(var_t));
-
-	ALLOCATE_HOST_VECTOR((void **)&(sd->h_oe),          n*sizeof(orbelem_t));
-}
-
-void allocate_device_storage(pp_disk_t::sim_data_t *sd, int n)
-{
-	sd->d_y.resize(2);
-	sd->d_yout.resize(2);
-
-	for (int i = 0; i < 2; i++)
-	{
-		ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_y[i]),	  n*sizeof(var4_t));
-		ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_yout[i]), n*sizeof(var4_t));
-	}
-	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_p),			  n*sizeof(pp_disk_t::param_t));
-	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_body_md),	  n*sizeof(pp_disk_t::body_metadata_t));
-	ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_epoch),		  n*sizeof(var_t));
-
-    ALLOCATE_DEVICE_VECTOR((void **)&(sd->d_oe),          n*sizeof(orbelem_t));
-}
-
-void deallocate_host_storage(pp_disk_t::sim_data_t *sd)
-{
-	for (int i = 0; i < 2; i++)
-	{
-		FREE_HOST_VECTOR((void **)&(sd->h_y[i]));
-		FREE_HOST_VECTOR((void **)&(sd->h_yout[i]));
-	}
-	FREE_HOST_VECTOR((void **)&(sd->h_p));
-	FREE_HOST_VECTOR((void **)&(sd->h_body_md));
-	FREE_HOST_VECTOR((void **)&(sd->h_epoch));
-
-	FREE_HOST_VECTOR((void **)&(sd->h_oe));
-}
-
-void deallocate_device_storage(pp_disk_t::sim_data_t *sd)
-{
-	for (int i = 0; i < 2; i++)
-	{
-		FREE_DEVICE_VECTOR((void **)&(sd->d_y[i]));
-		FREE_DEVICE_VECTOR((void **)&(sd->d_yout[i]));
-	}
-	FREE_DEVICE_VECTOR((void **)&(sd->d_p));
-	FREE_DEVICE_VECTOR((void **)&(sd->d_body_md));
-	FREE_DEVICE_VECTOR((void **)&(sd->d_epoch));
-
-    FREE_DEVICE_VECTOR((void **)&(sd->d_oe));
-}
-
-
-void copy_vector_to_device(void* dst, const void *src, size_t count)
+void copy_array_to_device(void* dst, const void *src, size_t count)
 {
 	CUDA_SAFE_CALL(cudaMemcpy(dst, src, count, cudaMemcpyHostToDevice));
 }
 
-void copy_vector_to_host(void* dst, const void *src, size_t count)
+void copy_array_to_host(void* dst, const void *src, size_t count)
 {
 	CUDA_SAFE_CALL(cudaMemcpy(dst, src, count, cudaMemcpyDeviceToHost));
 }
 
-void copy_vector_d2d(void* dst, const void *src, size_t count)
+void copy_array_d2d(void* dst, const void *src, size_t count)
 {
 	CUDA_SAFE_CALL(cudaMemcpy(dst, src, count, cudaMemcpyDeviceToDevice));
 }
@@ -540,24 +496,40 @@ void copy_constant_to_device(const void* dst, const void *src, size_t count)
 	CUDA_SAFE_CALL(cudaMemcpyToSymbol(dst, src, count, 0, cudaMemcpyHostToDevice));
 }
 
-
-void set_device(int id_of_target_dev, ostream& sout)
+void prn(const var_t* a)
 {
-	int n_device = get_n_cuda_device();
-	if (0 == n_device)
-	{
-		throw string("There are no available device(s) that support CUDA.");
-	}
+    dim3 grid(1);
+    dim3 block(1);
 
-	if (n_device > id_of_target_dev && 0 <= id_of_target_dev)
-	{
-		// Set the desired id of the device
-		CUDA_SAFE_CALL(cudaSetDevice(id_of_target_dev));
-	}
-	else
-	{
-		throw string("The device with the requested id does not exist.");
-	}
+    red_kernel::prn << <grid, block >> > (a);
+    CUDA_CHECK_ERROR();
+}
+
+void prn(const var3_t* a)
+{
+    dim3 grid(1);
+    dim3 block(1);
+
+    red_kernel::prn << <grid, block >> > (a);
+    CUDA_CHECK_ERROR();
+}
+
+void prn(const nbp_t::param_t* a)
+{
+    dim3 grid(1);
+    dim3 block(1);
+
+    red_kernel::prn << <grid, block >> > (a);
+    CUDA_CHECK_ERROR();
+}
+
+void prn(const nbp_t::metadata_t* a)
+{
+    dim3 grid(1);
+    dim3 block(1);
+
+    red_kernel::prn << <grid, block >> > (a);
+    CUDA_CHECK_ERROR();
 }
 
 void print_array(string path, string comment, uint32_t n, var_t *data, mem_loc_t mem_loc)
@@ -580,7 +552,7 @@ void print_array(string path, string comment, uint32_t n, var_t *data, mem_loc_t
 	if (MEM_LOC_DEVICE == mem_loc)
 	{
 		h_data = new var_t[n];
-		copy_vector_to_host(h_data, data, n * sizeof(var_t));
+		copy_array_to_host(h_data, data, n * sizeof(var_t));
 	}
 	else
 	{
@@ -603,36 +575,6 @@ void print_array(string path, string comment, uint32_t n, var_t *data, mem_loc_t
 	}
 }
 
-void create_aliases(comp_dev_t comp_dev, pp_disk_t::sim_data_t *sd)
-{
-	switch (comp_dev.proc_unit)
-	{
-	case PROC_UNIT_CPU:
-		for (int i = 0; i < 2; i++)
-		{
-			sd->y[i]    = sd->h_y[i];
-			sd->yout[i] = sd->h_yout[i];
-		}
-		sd->p       = sd->h_p;
-		sd->body_md = sd->h_body_md;
-		sd->epoch   = sd->h_epoch;
-        sd->oe      = sd->h_oe;
-		break;
-	case PROC_UNIT_GPU:
-		for (int i = 0; i < 2; i++)
-		{
-			sd->y[i]    = sd->d_y[i];
-			sd->yout[i] = sd->d_yout[i];
-		}
-		sd->p       = sd->d_p;
-		sd->body_md = sd->d_body_md;
-		sd->epoch   = sd->d_epoch;
-        sd->oe      = sd->d_oe;
-		break;
-	default:
-		throw string("Parameter 'proc_unit' is out of range.");
-	}
-}
 
 // Date of creation: 2016.11.22.
 // Last edited: 2017.07.14.

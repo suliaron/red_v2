@@ -464,7 +464,7 @@ void calc_velocity_after_collision(var_t m1, var_t m2, const var3_t* v1, const v
 	v.z = (m1 * v1->z + m2 * v2->z) / M;
 }
 
-void calc_physical_properties(const pp_disk_t::param_t &p1, const pp_disk_t::param_t &p2, pp_disk_t::param_t &p)
+void calc_physical_properties(const nbp_t::param_t &p1, const nbp_t::param_t &p2, nbp_t::param_t &p)
 {
 	// Calculate V = V1 + V2
 	var_t volume = 4.188790204786391 * (CUBE(p1.radius) + CUBE(p2.radius));
@@ -472,7 +472,6 @@ void calc_physical_properties(const pp_disk_t::param_t &p1, const pp_disk_t::par
 	p.mass	  = p1.mass + p2.mass;
 	p.density = p.mass / volume;
 	p.radius  = calc_radius(p.mass, p.density);
-	p.cd      = p1.cd;
 }
 
 var_t norm(const var4_t* r)
@@ -934,7 +933,7 @@ void calc_phase(var_t mu, const orbelem_t* oe, var3_t* rVec, var3_t* vVec)
 	vVec->z = vKszi * P.z + vEta * Q.z;
 }
 
-void calc_oe(var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe)
+int calc_oe(var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe)
 {
     const var_t sq2 = 1.0e-14;
     const var_t sq3 = 1.0e-14;
@@ -945,9 +944,10 @@ void calc_oe(var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe)
 	// Calculate energy, h
     var_t h = calc_energy(mu, rVec, vVec);
     if (h >= 0.0)
-    {
-		throw string("The Kepler-energy is positive. calc_oe() failed.");
-    }
+        return 1;
+    //{
+    //    throw string("The Kepler-energy is positive. calc_oe() failed.");
+    //}
 
 	var4_t cVec;
     cVec.x = rVec->y * vVec->z - rVec->z * vVec->y;
@@ -1031,6 +1031,8 @@ void calc_oe(var_t mu, const var3_t* rVec, const var3_t* vVec, orbelem_t* oe)
 	oe->peri = peri;
 	oe->node = node;
 	oe->mean = M;
+
+    return 0;
 }
 
 var_t calc_orbital_period(var_t mu, var_t a)
@@ -1404,6 +1406,53 @@ void transform_to_bc(uint32_t n, const nbp_t::param_t* p, var3_t* r, var3_t* v)
         v[j].x -= V0.x;		v[j].y -= V0.y;		v[j].z -= V0.z;
     }
 }
+
+uint32_t remove_duplicate(nbp_t::event_data_t* ed, uint32_t n_event)
+{
+    //!< Vector on the host containing data for events but  (one colliding pair one occurances)
+    vector<nbp_t::event_data_t> sp_events(n_event);
+
+    bool *processed = new bool[n_event];
+    for (uint32_t i = 0; i < n_event; i++)
+    {
+        processed[i] = false;
+    }
+
+    uint32_t n = 0;
+    for (uint32_t k = 0; k < n_event; k++)
+    {
+        if (!processed[k])
+        {
+            processed[k] = true;
+            sp_events[n] = ed[k];
+        }
+        else
+        {
+            continue;
+        }
+        for (uint32_t i = k + 1; i < n_event; i++)
+        {
+            if (sp_events[n].id1 == ed[i].id1 && sp_events[n].id2 == ed[i].id2)
+            {
+                processed[i] = true;
+                if (sp_events[n].t > ed[i].t)
+                {
+                    sp_events[n] = ed[i];
+                }
+            }
+        }
+        n++;
+    }
+    delete[] processed;
+
+    for (uint32_t k = 0; k < n; k++)
+    {
+        ed[k] = sp_events[k];
+    }
+
+    return n;
+}
+
 
 } /* namespace nbp */
 

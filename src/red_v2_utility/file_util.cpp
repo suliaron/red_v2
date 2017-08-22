@@ -578,7 +578,7 @@ namespace redutil2
 		            sout.setf(ios::right);
 		            sout.setf(ios::scientific);
 
-		            sout << setw(VAR_T_W) << t << SEP            /* time of the record [day] (double) */
+		            sout << setw(VAR_T_W) << t << SEP             /* time of the record [day] (double) */
                          << setw(VAR_T_W) << dt << SEP            /* next timestep [day]      (double) */
                          << setw(VAR_T_W) << dt_wc << SEP         /* the ellapsed time since the begining of the integration [sec]      (double) */
                          << setw(INT_T_W) << n_obj << endl;       /* number of bodies         (uint32) */
@@ -595,7 +595,6 @@ namespace redutil2
 	            default:
 		            throw string("Parameter 'repres' is out of range.");
 	            }
-
             }
 
             void print_solution_data(std::ofstream& sout, uint32_t n_obj, uint16_t n_ppo, uint16_t n_vpo, nbp_t::metadata_t* md, nbp_t::param_t* p, var_t* y, data_rep_t repres)
@@ -653,22 +652,21 @@ namespace redutil2
                 static int var_t_w = 15;
                 static int int_t_w = 7;
 
-                sout.precision(6);
                 sout.setf(ios::right);
                 sout.setf(ios::scientific);
 
-                sout << setw(var_t_w) << epoch << SEP
+                sout << setw(VAR_T_W) << epoch << SEP
                     << setw(int_t_w) << md.id << SEP
                     << setw(2) << md.body_type << SEP
-                    << setw(var_t_w) << p.mass << SEP
-                    << setw(var_t_w) << p.radius << SEP
-                    << setw(var_t_w) << p.density << SEP
-                    << setw(var_t_w) << oe.sma << SEP
-                    << setw(var_t_w) << oe.ecc << SEP
-                    << setw(var_t_w) << oe.inc << SEP
-                    << setw(var_t_w) << oe.peri << SEP
-                    << setw(var_t_w) << oe.node << SEP
-                    << setw(var_t_w) << oe.mean << endl;
+                    << setw(VAR_T_W) << p.mass << SEP
+                    << setw(VAR_T_W) << p.radius << SEP
+                    << setw(VAR_T_W) << p.density << SEP
+                    << setw(VAR_T_W) << oe.sma << SEP
+                    << setw(VAR_T_W) << oe.ecc << SEP
+                    << setw(VAR_T_W) << oe.inc << SEP
+                    << setw(VAR_T_W) << oe.peri << SEP
+                    << setw(VAR_T_W) << oe.node << SEP
+                    << setw(VAR_T_W) << oe.mean << endl;
 
                 sout.flush();
             }

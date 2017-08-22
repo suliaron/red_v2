@@ -30,8 +30,7 @@ parameter::parameter(string& dir, string& filename, bool verbose) :
 }
 
 parameter::~parameter() 
-{
-}
+{ }
 
 void parameter::create_default()
 {
@@ -48,6 +47,18 @@ void parameter::create_default()
 
 	memset(threshold, 0, THRESHOLD_N * sizeof(var_t));
 }
+
+bool parameter::get_chk_evnt()
+{
+    if (0.0 < threshold[THRESHOLD_EJECTION_DISTANCE] ||
+        0.0 < threshold[THRESHOLD_HIT_CENTRUM_DISTANCE] ||
+        0.0 < threshold[THRESHOLD_RADII_ENHANCE_FACTOR])
+    {
+        return true;
+    }
+    return false;
+}
+
 
 void parameter::parse()
 {

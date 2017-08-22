@@ -307,41 +307,49 @@ ode* options::create_model()
 
     get_solution_path(path_si, path_sd);
 
-	switch (dyn_model)
+    size_t omd_size = 0;
+    switch (dyn_model)
 	{
 	case DYN_MODEL_TBP1D:
 		{
-		    model = new tbp1D(path_si, path_sd, 1, comp_dev);
+            omd_size = sizeof(tbp_t::metadata_t);
+		    model = new tbp1D(path_si, path_sd, 1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_TBP2D:
 		{
-		    model = new tbp2D(path_si, path_sd, 1, comp_dev);
+            omd_size = sizeof(tbp_t::metadata_t);
+            model = new tbp2D(path_si, path_sd, 1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_TBP3D:
 		{
-		    model = new tbp3D(1, comp_dev);
+            omd_size = sizeof(tbp_t::metadata_t);
+            model = new tbp3D(1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_RTBP1D:
 		{
-		    model = new rtbp1D(path_si, path_sd, 1, comp_dev);
+            omd_size = sizeof(tbp_t::metadata_t);
+            model = new rtbp1D(path_si, path_sd, 1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_RTBP2D:
 		{
-		    model = new rtbp2D(path_si, path_sd, 1, comp_dev);
+            omd_size = sizeof(tbp_t::metadata_t);
+            model = new rtbp2D(path_si, path_sd, 1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_RTBP3D:
 		{
-		    model = new rtbp3D(1, comp_dev);
+            omd_size = sizeof(tbp_t::metadata_t);
+            model = new rtbp3D(1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_THREEBODY:
 		{
-	    	model = new threebody(1, comp_dev);
+            omd_size = 3 * sizeof(threebody_t::metadata_t);
+            model = new threebody(1, omd_size, comp_dev);
 			break;
 		}
 	case DYN_MODEL_NBODY:
@@ -387,7 +395,18 @@ ode* options::create_model()
             input.close();
 
             uint16_t n_ppo = sizeof(nbp_t::param_t) / sizeof(var_t);
-			model = new nbody(path_si, path_sd, n_obj, n_ppo, comp_dev);
+            omd_size = n_obj * sizeof(nbp_t::metadata_t);
+            if (0.0 < param->threshold[THRESHOLD_EJECTION_DISTANCE] ||
+                0.0 < param->threshold[THRESHOLD_HIT_CENTRUM_DISTANCE] ||
+                0.0 < param->threshold[THRESHOLD_RADII_ENHANCE_FACTOR])
+            {
+                size_t event_size = (n_obj / 3 + 2) * sizeof(nbp_t::event_data_t);
+                model = new nbody(path_si, path_sd, n_obj, n_ppo, omd_size, event_size, comp_dev);
+            }
+            else
+            {
+                model = new nbody(path_si, path_sd, n_obj, n_ppo, omd_size, comp_dev);
+            }
 			break;
 		}
 	default:

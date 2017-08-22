@@ -94,10 +94,10 @@ void allocate_host_storage(uint32_t n_obj, var_t** h_y, var_t** h_dy, var_t** h_
     const uint32_t n_var = n_obj * NVPO;
     const uint32_t n_par = n_obj * n_ppo;
 
-    ALLOCATE_HOST_VECTOR((void**)(h_y), n_var * sizeof(var_t));
-    ALLOCATE_HOST_VECTOR((void**)(h_dy), n_var * sizeof(var_t));
-    ALLOCATE_HOST_VECTOR((void**)(h_p), n_par * sizeof(var_t));
-    ALLOCATE_HOST_VECTOR((void**)(h_md), n_obj * sizeof(nbp_t::metadata_t));
+    ALLOCATE_HOST_ARRAY((void**)(h_y), n_var * sizeof(var_t));
+    ALLOCATE_HOST_ARRAY((void**)(h_dy), n_var * sizeof(var_t));
+    ALLOCATE_HOST_ARRAY((void**)(h_p), n_par * sizeof(var_t));
+    ALLOCATE_HOST_ARRAY((void**)(h_md), n_obj * sizeof(nbp_t::metadata_t));
 
 }
 
@@ -107,26 +107,26 @@ void allocate_device_storage(uint32_t n_obj, var_t** d_y, var_t** d_a, var_t** d
     const uint32_t n_var = n_obj * NVPO;
     const uint32_t n_par = n_obj * n_ppo;
 
-    ALLOCATE_DEVICE_VECTOR((void**)(d_y), n_var * sizeof(var_t));
-    ALLOCATE_DEVICE_VECTOR((void**)(d_a), n_var * sizeof(var_t));
-    ALLOCATE_DEVICE_VECTOR((void**)(d_p), n_par * sizeof(var_t));
-    ALLOCATE_DEVICE_VECTOR((void**)(d_md), n_obj * sizeof(nbp_t::metadata_t));
+    ALLOCATE_DEVICE_ARRAY((void**)(d_y), n_var * sizeof(var_t));
+    ALLOCATE_DEVICE_ARRAY((void**)(d_a), n_var * sizeof(var_t));
+    ALLOCATE_DEVICE_ARRAY((void**)(d_p), n_par * sizeof(var_t));
+    ALLOCATE_DEVICE_ARRAY((void**)(d_md), n_obj * sizeof(nbp_t::metadata_t));
 }
 
 void deallocate_host_storage(var_t** h_y, var_t** h_dy, var_t** h_p, nbp_t::metadata_t** h_md)
 {
-    FREE_HOST_VECTOR((void **)(h_y));
-    FREE_HOST_VECTOR((void **)(h_dy));
-    FREE_HOST_VECTOR((void **)(h_p));
-    FREE_HOST_VECTOR((void **)(h_md));
+    FREE_HOST_ARRAY((void **)(h_y));
+    FREE_HOST_ARRAY((void **)(h_dy));
+    FREE_HOST_ARRAY((void **)(h_p));
+    FREE_HOST_ARRAY((void **)(h_md));
 }
 
 void deallocate_device_storage(var_t** d_y, var_t** d_a, var_t** d_p, nbp_t::metadata_t** d_md)
 {
-    FREE_DEVICE_VECTOR((void **)(d_y));
-    FREE_DEVICE_VECTOR((void **)(d_a));
-    FREE_DEVICE_VECTOR((void **)(d_p));
-    FREE_DEVICE_VECTOR((void **)(d_md));
+    FREE_DEVICE_ARRAY((void **)(d_y));
+    FREE_DEVICE_ARRAY((void **)(d_a));
+    FREE_DEVICE_ARRAY((void **)(d_p));
+    FREE_DEVICE_ARRAY((void **)(d_md));
 }
 
 void populate(uint32_t n_obj, var_t* h_y, var_t* h_p, nbp_t::metadata_t* h_md)

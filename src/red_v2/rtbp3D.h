@@ -7,20 +7,13 @@
 class rtbp3D : public ode
 {
 public:
-	rtbp3D(uint16_t n_ppo, comp_dev_t comp_dev);
-	rtbp3D(uint16_t n_ppo, var_t t, tbp_t::metadata_t *md, tbp_t::param_t* p, var_t* r, var_t* v, comp_dev_t comp_dev);
+	rtbp3D(uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev);
 	~rtbp3D();
 
 	void load(std::string& path);
 	void load_ascii(std::ifstream& input);
 	void load_ascii_record(std::ifstream& input, var_t* _t, tbp_t::metadata_t *md, tbp_t::param_t* p, var_t* r, var_t* v);
 	void load_binary(std::ifstream& input);
-
-	//! Copies N-body metadata between HOST and DEVICE memory
-	/*!
-		\param dir The direction of the copy
-	*/
-	void copy_metadata(copy_direction_t dir);
 
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
@@ -47,8 +40,8 @@ public:
 	*/
 	void print_integral(std::string& path);
 
-	static void trans_to_descartes(const var4_t& u, const var4_t& u_prime, var3_t& r, var3_t& v);
-	static void trans_to_parameter(const var3_t& r, const var3_t& v, var4_t& u, var4_t& u_prime);
+	//static void trans_to_descartes(const var4_t& u, const var4_t& u_prime, var3_t& r, var3_t& v);
+	//static void trans_to_parameter(const var3_t& r, const var3_t& v, var4_t& u, var4_t& u_prime);
 	void trans_to_descartes_var(var_t& x, var_t& y, var_t& z, var_t& vx, var_t& vy, var_t& vz);
 
     void calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk);
@@ -57,13 +50,6 @@ public:
 
 //private:
 	void initialize();
-	void allocate_storage();
-	void allocate_host_storage();
-	void allocate_device_storage();
-	
-	void deallocate_storage();
-	void deallocate_host_storage();
-	void deallocate_device_storage();
 
 	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);

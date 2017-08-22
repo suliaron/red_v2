@@ -117,7 +117,7 @@ void print_solution(uint32_t& n_print, options* opt, ode* f, integrator* intgr, 
 
 void print_info(options* opt, ode* f, integrator* intgr, var_t dt, var_t total_t)
 {
-    static char FMT_STR[] = "%s %s %13.7e %10.4e  %12.6e %9.3e  %12llu %12llu %12llu\n";
+    static char FMT_STR[] = "%s %s %13.7e %10.4e %12.6e %9.3e %7lu %7lu %7lu %12llu %12llu %12llu\n";
     string fn_info;
     string path;
 
@@ -132,14 +132,17 @@ void print_info(options* opt, ode* f, integrator* intgr, var_t dt, var_t total_t
     string time_stamp = tools::get_time_stamp();
     string dev = (opt->comp_dev.proc_unit == PROC_UNIT_CPU ? "CPU" : "GPU");
     var_t dt_did = intgr->get_dt_did();
+    uint32_t n_si = ((nbody*)f)->get_n_si();
+    uint32_t n_nsi = ((nbody*)f)->get_n_nsi();
+    uint32_t n_ni = ((nbody*)f)->get_n_ni();
     uint64_t np = intgr->get_n_passed_step();
     uint64_t nf = intgr->get_n_failed_step();
     uint64_t nt = intgr->get_n_tried_step();
 
-    fprintf(fout, FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, np, nf, nt);
+    fprintf(fout, FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, n_si, n_nsi, n_ni, np, nf, nt);
     if (opt->print_to_screen)
     {
-        printf(FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, np, nf, nt);
+        printf(FMT_STR, time_stamp.c_str(), dev.c_str(), f->t, dt_did, total_t, dt, n_si, n_nsi, n_ni, np, nf, nt);
     }
     fclose(fout);
 }
@@ -201,16 +204,26 @@ void run_simulation(options* opt, ode* f, integrator* intgr, ofstream& slog)
 	/* 
 	 * Main cycle
 	 */
-    //comp_dev_t cd = opt->comp_dev;
+    bool chk_evnt = opt->param->get_chk_evnt();
     var_t length = 0.0;
 	while (length <= opt->param->simulation_length) //(f->t <= opt->param->simulation_length)
 	{
-        //if (DYN_MODEL_NBODY == opt->dyn_model)
-        //{
-        //    nbody* nb = (nbody*)f;
-        //    nb->chk_coll(opt->param->threshold[THRESHOLD_RADII_ENHANCE_FACTOR]);
-        //}
-#if 1
+        if (chk_evnt && DYN_MODEL_NBODY == opt->dyn_model)
+        {
+            nbody* nb = (nbody*)f;
+            uint32_t n_event = nb->chk_event(path_event, opt->param->threshold);
+            //if (n_event)
+            //{
+            //    nb->rebuild_host_array();
+            //    if (PROC_UNIT_GPU == opt->comp_dev.proc_unit)
+            //    {
+            //        f->copy_vars(COPY_DIRECTION_TO_DEVICE);
+            //        f->copy_params(COPY_DIRECTION_TO_DEVICE);
+            //        f->copy_metadata(COPY_DIRECTION_TO_DEVICE);
+            //    }
+            //}
+        }
+#if 0
         if (PROC_UNIT_CPU == opt->comp_dev.proc_unit)
         {
             //printf("The computing device is setting to GPU ... ");

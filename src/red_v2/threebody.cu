@@ -13,87 +13,27 @@ using namespace std;
 using namespace redutil2;
 
 
-threebody::threebody(uint16_t n_ppo, comp_dev_t comp_dev) :
-	ode(3, 3, 8, n_ppo, 17, 3, comp_dev)
+threebody::threebody(uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev) :
+	ode(3, 3, 8, n_ppo, 17, 3, omd_size, comp_dev)
 {
 	name = "Regularized 3D three-body problem";
 	
 	initialize();
-	allocate_storage();
 }
 
 threebody::~threebody()
-{
-	deallocate_storage();
-}
+{ }
 
 void threebody::initialize()
 {
-	h_md    = NULL;
-	h_epoch = NULL;
+    h_md = (threebody_t::metadata_t*)h_omd;
+    d_md = (threebody_t::metadata_t*)d_omd;
+      md = (threebody_t::metadata_t*)omd;
 
 	h       = 0.0;
 
 	first_open_integral = true;
 	first_open_solution = true;
-}
-
-void threebody::allocate_storage()
-{
-	allocate_host_storage();
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		allocate_device_storage();
-	}
-}
-
-void threebody::allocate_host_storage()
-{
-	ALLOCATE_HOST_VECTOR((void**)&(h_md),    n_obj * sizeof(threebody_t::metadata_t));
-	ALLOCATE_HOST_VECTOR((void**)&(h_epoch), n_obj * sizeof(var_t));
-}
-
-void threebody::allocate_device_storage()
-{
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md),    n_obj * sizeof(threebody_t::metadata_t));
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_epoch), n_obj * sizeof(var_t));
-}
-
-void threebody::deallocate_storage()
-{
-	//NOTE : First always release the DEVICE memory
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		deallocate_device_storage();
-	}
-	deallocate_host_storage();
-}
-
-void threebody::deallocate_host_storage()
-{
-	FREE_HOST_VECTOR((void **)&(h_md));
-	FREE_HOST_VECTOR((void **)&(h_epoch));
-}
-
-void threebody::deallocate_device_storage()
-{
-	FREE_DEVICE_VECTOR((void **)&(h_md));
-	FREE_DEVICE_VECTOR((void **)&(h_epoch));
-}
-
-void threebody::copy_metadata(copy_direction_t dir)
-{
-	switch (dir)
-	{
-	case COPY_DIRECTION_TO_DEVICE:
-		copy_vector_to_device(d_md, h_md, n_obj*sizeof(threebody_t::metadata_t));
-		break;
-	case COPY_DIRECTION_TO_HOST:
-		copy_vector_to_host(h_md, d_md, n_obj*sizeof(threebody_t::metadata_t));
-		break;
-	default:
-		throw std::string("Parameter 'dir' is out of range.");
-	}
 }
 
 void threebody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
@@ -116,7 +56,7 @@ void threebody::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t
 void threebody::calc_integral()
 {
 	static bool first_call = true;
-	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
+	const threebody_t::param_t* p = (threebody_t::param_t*)h_par;
 
 	var3_t q1, q2, q3, p1, p2, p3;
 	/* Eq. (4.51): */
@@ -151,7 +91,7 @@ void threebody::calc_integral()
 
 void threebody::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
+	const threebody_t::param_t* p = (threebody_t::param_t*)h_par;
 
 	/*
 	Q1 = y_temp[0], Q2 = y_temp[1], Q3 = y_temp[2], Q4 = y_temp[3],
@@ -280,7 +220,7 @@ void threebody::load(string& path)
 
 void threebody::load_ascii(ifstream& input)
 {
-	threebody_t::param_t* p = (threebody_t::param_t*)h_p;
+	threebody_t::param_t* p = (threebody_t::param_t*)h_par;
 
 	for (uint32_t i = 0; i < n_obj; i++)
 	{
@@ -366,7 +306,7 @@ void threebody::print_solution_ascii(ofstream& sout)
 	sout.setf(ios::right);
 	sout.setf(ios::scientific);
 
-	const threebody_t::param_t* p = (threebody_t::param_t*)h_p;
+	const threebody_t::param_t* p = (threebody_t::param_t*)h_par;
 	var3_t q1, q2, q3, p1, p2, p3;
 	const var4_t Q1 = {h_y[0], h_y[1], h_y[2], h_y[3]};
 	const var4_t Q2 = {h_y[4], h_y[5], h_y[6], h_y[7]};

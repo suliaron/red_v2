@@ -72,14 +72,14 @@ int_rungekutta7::~int_rungekutta7()
 
 void int_rungekutta7::allocate_Butcher_tableau()
 {
-	ALLOCATE_DEVICE_VECTOR((void**)&d_a,  sizeof(a));
-	ALLOCATE_DEVICE_VECTOR((void**)&d_bh, sizeof(bh));
+	ALLOCATE_DEVICE_ARRAY((void**)&d_a,  sizeof(a));
+	ALLOCATE_DEVICE_ARRAY((void**)&d_bh, sizeof(bh));
 }
 
 void int_rungekutta7::deallocate_Butcher_tableau()
 {
-	FREE_DEVICE_VECTOR((void**)&d_a);
-	FREE_DEVICE_VECTOR((void**)&d_bh);
+	FREE_DEVICE_ARRAY((void**)&d_a);
+	FREE_DEVICE_ARRAY((void**)&d_bh);
 }
 
 void int_rungekutta7::check_Butcher_tableau()
@@ -145,6 +145,8 @@ void int_rungekutta7::calc_error(uint32_t n)
 	}
 }
 
+//#define WRITE_VARS
+#undef WRITE_VARS
 var_t int_rungekutta7::step()
 {
 	static std::string err_msg1 = "The integrator could not provide the approximation of the solution with the specified tolerance.";
@@ -154,17 +156,17 @@ var_t int_rungekutta7::step()
 
 	uint16_t stage = 0;
 	t = f.t;
-#if 0
-    std::string path("C:\\Work\\red.cuda.Results\\v2.0\\Test\\nbp\\TwoBody\\20170624\\gpu_rk7.txt");
+#ifdef WRITE_VARS
+    std::string path(PROC_UNIT_CPU == comp_dev.proc_unit ? "C:\\Work\\TEST\\N_ALL_IA\\cpu_rk7.txt" : "C:\\Work\\TEST\\N_ALL_IA\\gpu_rk7.txt");
     char buffer[512];
-    sprintf(buffer, "stage = %2d, f.y:", stage);
+    sprintf(buffer, "t = %10.4e, f.y:", f.t);
     std::string comment(buffer);
     redutil2::print_array(path, comment, f.get_n_var(), f.y, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
 #endif
     // Calculate initial differentials and store them into k
 	f.calc_dy(stage, t, f.y, k[0]);  // -> k1
 
-#if 0
+#ifdef WRITE_VARS
     sprintf(buffer, "k[%2d]:", stage);
     comment.assign(buffer);
     redutil2::print_array(path, comment, f.get_n_var(), k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ?  MEM_LOC_HOST : MEM_LOC_DEVICE));
@@ -186,21 +188,21 @@ var_t int_rungekutta7::step()
 		}
 	    if (PROC_UNIT_GPU == comp_dev.proc_unit)
 	    {
-			copy_vector_to_device(d_a,  h_a,  sizeof(h_a) );
-			copy_vector_to_device(d_bh, h_bh, sizeof(h_bh));
+			copy_array_to_device(d_a,  h_a,  sizeof(h_a) );
+			copy_array_to_device(d_bh, h_bh, sizeof(h_bh));
 	    }
 
 		for (stage = 1; stage < 11; stage++)
 		{
 			t = f.t + c[stage] * dt_try;
 			calc_ytemp(stage);
-#if 0
+#ifdef WRITE_VARS
             sprintf(buffer, "stage = %2d, ytemp:", stage);
             comment.assign(buffer);
             redutil2::print_array(path, comment, f.get_n_var(), ytemp, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
 #endif
             f.calc_dy(stage, t, ytemp, k[stage]); // -> k2, k3, ..., k11
-#if 0
+#ifdef WRITE_VARS
             sprintf(buffer, "k[%2d]:", stage);
             comment.assign(buffer);
             redutil2::print_array(path, comment, f.get_n_var(), k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
@@ -208,7 +210,7 @@ var_t int_rungekutta7::step()
         }
 		// We have stage (11) number of k vectors, approximate the solution in f.yout using the bh coeff:
 		calc_y_np1();   // -> f.yout = y = ynp1 = yn + 41/840*k1 - 34/105*k6 ... + 41/840*k11
-#if 0
+#ifdef WRITE_VARS
         sprintf(buffer, "stage = %2d, f.yout:", stage);
         comment.assign(buffer);
         redutil2::print_array(path, comment, f.get_n_var(), f.yout, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
@@ -221,13 +223,13 @@ var_t int_rungekutta7::step()
 			{
 				t = f.t + c[stage] * dt_try;
 				calc_ytemp(stage);
-#if 0
+#ifdef WRITE_VARS
                 sprintf(buffer, "stage = %2d, ytemp:", stage);
                 comment.assign(buffer);
                 redutil2::print_array(path, comment, f.get_n_var(), ytemp, (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
 #endif
                 f.calc_dy(stage, t, ytemp, k[stage]); // -> k12, k13
-#if 0
+#ifdef WRITE_VARS
                 sprintf(buffer, "k[%2d]:", stage);
                 comment.assign(buffer);
                 redutil2::print_array(path, comment, f.get_n_var(), k[stage], (comp_dev.proc_unit == PROC_UNIT_CPU ? MEM_LOC_HOST : MEM_LOC_DEVICE));
@@ -258,5 +260,6 @@ var_t int_rungekutta7::step()
 
 	return dt_did;
 }
+#undef WRITE_VARS
 
 #undef LAMBDA

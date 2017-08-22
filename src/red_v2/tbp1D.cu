@@ -11,13 +11,12 @@ using namespace std;
 using namespace redutil2;
 
 
-tbp1D::tbp1D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp_dev) :
-	ode(1, 1, 2, n_ppo, comp_dev)
+tbp1D::tbp1D(string& path_si, string& path_sd, uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev) :
+	ode(1, 1, 2, n_ppo, omd_size, comp_dev)
 {
 	name = "Singular 1D two-body problem";
 
 	initialize();
-	allocate_storage();
 
     load_solution_info(path_si);
     load_solution_data(path_sd);
@@ -27,54 +26,13 @@ tbp1D::tbp1D(string& path_si, string& path_sd, uint16_t n_ppo, comp_dev_t comp_d
 }
 
 tbp1D::~tbp1D()
-{
-	deallocate_storage();
-}
+{ }
 
 void tbp1D::initialize()
 {
-	h_md       = NULL;
-	d_md       = NULL;
-	md         = NULL;
-}
-
-void tbp1D::allocate_storage()
-{
-	allocate_host_storage();
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		allocate_device_storage();
-	}
-}
-
-void tbp1D::allocate_host_storage()
-{
-	ALLOCATE_HOST_VECTOR((void**)&(h_md), n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void tbp1D::allocate_device_storage()
-{
-	ALLOCATE_DEVICE_VECTOR((void**)&(d_md), n_obj * sizeof(tbp_t::metadata_t));
-}
-
-void tbp1D::deallocate_storage()
-{
-	//NOTE : First always release the DEVICE memory	
-	if (PROC_UNIT_GPU == comp_dev.proc_unit)
-	{
-		deallocate_device_storage();
-	}
-	deallocate_host_storage();
-}
-
-void tbp1D::deallocate_host_storage()
-{
-	FREE_HOST_VECTOR((void **)&(h_md));
-}
-
-void tbp1D::deallocate_device_storage()
-{
-	FREE_DEVICE_VECTOR((void **)&(d_md));
+    h_md = (tbp_t::metadata_t*)h_omd;
+    d_md = (tbp_t::metadata_t*)d_omd;
+      md = (tbp_t::metadata_t*)omd;
 }
 
 void tbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* acc, var_t* jrk)
@@ -94,25 +52,10 @@ void tbp1D::calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy
 	}
 }
 
-void tbp1D::copy_metadata(copy_direction_t dir)
-{
-	switch (dir)
-	{
-	case COPY_DIRECTION_TO_DEVICE:
-		copy_vector_to_device(d_md, h_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	case COPY_DIRECTION_TO_HOST:
-		copy_vector_to_host(h_md, d_md, n_obj*sizeof(tbp_t::metadata_t));
-		break;
-	default:
-		throw std::string("Parameter 'dir' is out of range.");
-	}
-}
-
 void tbp1D::calc_integral()
 {
 	static bool first_call = true;
-	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	integral.h = 0.5 * SQR(h_y[1]) - p[0].mu / h_y[0];
 
@@ -125,7 +68,7 @@ void tbp1D::calc_integral()
 
 void tbp1D::cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy)
 {
-	const tbp_t::param_t* p = (tbp_t::param_t*)h_p;
+	const tbp_t::param_t* p = (tbp_t::param_t*)h_par;
 
 	dy[0] = y_temp[1];                    // dx1 / dt = x2
 	dy[1] = -p[0].mu / SQR(y_temp[0]);    // dx2 / dt = -mu / (x1*x1)
@@ -220,7 +163,7 @@ void tbp1D::load_ascii(ifstream& input)
 	// id
 	input >> h_md[0].id;
 	// mu = k^2*(m1 + m2)
-	input >> h_p[0];
+	input >> h_par[0];
 	// position
 	input >> h_y[0];
 	// velocity
@@ -269,7 +212,7 @@ void tbp1D::print_solution(std::string& path_si, std::string& path_sd, data_rep_
 	{
 		throw string("Cannot open " + path_sd + ".");
 	}
-	file::tbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, h_p, h_y, repres);
+	file::tbp::print_solution_data(sout, n_obj, n_ppo, n_vpo, h_md, h_par, h_y, repres);
 	sout.close();
 }
 

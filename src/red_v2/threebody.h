@@ -7,19 +7,21 @@
 class threebody : public ode
 {
 public:
-	threebody(uint16_t n_ppo, comp_dev_t comp_dev);
+    //! Constructs a threebody object
+    /*!
+    \param path_si   the path of the file which conatins data about the initial conditions
+    \param path_sd   the path of the file which conatins the initial conditions
+    \param n_ppo     the number of parameters per object
+    \param omd_size  the size of the metadata in bytes
+    \param PROC_UNIT the name of the executing device
+    */
+    threebody(uint16_t n_ppo, size_t omd_size, comp_dev_t comp_dev);
 	~threebody();
 
 	void load(std::string& path);
 	void load_ascii(std::ifstream& input);
 	void load_ascii_record(std::ifstream& input, var_t* t, threebody_t::metadata_t *md, threebody_t::param_t* p);
 	void load_binary(std::ifstream& input);
-
-	//! Copies N-body metadata between HOST and DEVICE memory
-	/*!
-		\param dir The direction of the copy
-	*/
-	void copy_metadata(copy_direction_t dir);
 
 	//! Print the solution (the numerical approximation of the solution)
 	/*!
@@ -55,13 +57,6 @@ public:
 
 //private:
 	void initialize();
-	void allocate_storage();
-	void allocate_host_storage();
-	void allocate_device_storage();
-	
-	void deallocate_storage();
-	void deallocate_host_storage();
-	void deallocate_device_storage();
 
 	void cpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
 	void gpu_calc_dy(uint16_t stage, var_t curr_t, const var_t* y_temp, var_t* dy);
