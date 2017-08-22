@@ -7,12 +7,8 @@ namespace redutil2
 {
 	namespace tools
 	{
-		/// Default white-space characters
-		static const char* ws = " \t\n\r\f\v";
-		/// Default comment character
-		static const char* comment = "#";
 
-		bool is_number(const std::string& str);
+        bool is_number(const std::string& str);
 
         //! Removes all leading white-space characters from the current string object. The default white spaces are: " \t\n\r\f\v"
         /*

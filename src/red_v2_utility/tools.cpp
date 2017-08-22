@@ -37,7 +37,10 @@ bool is_number(const string& str)
 
 string& ltrim(string& s)
 {
-	s.erase(0, s.find_first_not_of(ws));
+    /// Default white-space characters
+    static const char* ws = " \t\n\r\f\v";
+    
+    s.erase(0, s.find_first_not_of(ws));
     return s;
 }
 
@@ -49,6 +52,9 @@ string& ltrim(string& s, const char* t)
 
 string& rtrim(string& s)
 {
+    /// Default white-space characters
+    static const char* ws = " \t\n\r\f\v";
+
     s.erase(s.find_last_not_of(ws) + 1);
     return s;
 }
@@ -71,6 +77,9 @@ string& trim(string& s, const char* t)
 
 string& trim_comment(string& s)
 {
+    /// Default comment character
+    static const char* comment = "#";
+
 	size_t p = s.find_first_of(comment);
 	// If not found
 	if (string::npos == p)
